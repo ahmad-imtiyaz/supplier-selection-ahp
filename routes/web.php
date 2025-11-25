@@ -29,14 +29,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // AHP Criteria Comparison
     Route::prefix('criteria-comparisons')->name('criteria-comparisons.')->group(function () {
+
         Route::get('/', [CriteriaComparisonController::class, 'index'])->name('index');
         Route::get('/create', [CriteriaComparisonController::class, 'create'])->name('create');
         Route::post('/', [CriteriaComparisonController::class, 'store'])->name('store');
         Route::post('/calculate', [CriteriaComparisonController::class, 'calculate'])->name('calculate');
         Route::get('/result', [CriteriaComparisonController::class, 'result'])->name('result');
+
+        // LETAKKAN RESET DI ATAS!
+        Route::delete('/reset', [CriteriaComparisonController::class, 'reset'])->name('reset');
+
+        // Route dynamic HARUS paling terakhir
         Route::delete('/{criteriaComparison}', [CriteriaComparisonController::class, 'destroy'])->name('destroy');
-        Route::post('/reset', [CriteriaComparisonController::class, 'reset'])->name('reset');
     });
+
 
     // Supplier Assessment
     Route::prefix('supplier-assessments')->name('supplier-assessments.')->group(function () {
