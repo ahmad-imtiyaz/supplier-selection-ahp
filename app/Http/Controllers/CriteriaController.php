@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Criteria;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CriteriaController extends Controller
 {
@@ -20,61 +22,135 @@ class CriteriaController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:10|unique:criteria,code',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'code' => 'required|string|max:10|unique:criteria,code|regex:/^[A-Z0-9]+$/',
+                'name' => 'required|string|max:255|min:3',
+                'description' => 'nullable|string|max:1000',
+                'is_active' => 'boolean',
+            ], [
+                'code.required' => 'Kode kriteria wajib diisi',
+                'code.unique' => 'Kode kriteria sudah digunakan',
+                'code.regex' => 'Kode kriteria hanya boleh huruf kapital dan angka',
+                'name.required' => 'Nama kriteria wajib diisi',
+                'name.min' => 'Nama kriteria minimal 3 karakter',
+                'description.max' => 'Deskripsi maksimal 1000 karakter',
+            ]);
 
-        $validated['is_active'] = $request->has('is_active');
-        $validated['weight'] = 0;
+            DB::beginTransaction();
 
-        Criteria::create($validated);
+            $validated['is_active'] = $request->has('is_active');
+            $validated['weight'] = 0;
 
-        return redirect()
-            ->route('criteria.index')
-            ->with('success', 'Kriteria berhasil ditambahkan!');
+            Criteria::create($validated);
+
+            DB::commit();
+
+            return redirect()
+                ->route('criteria.index')
+                ->with('success', 'Kriteria berhasil ditambahkan!');
+        } catch (ValidationException $e) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors($e->errors())
+                ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
-    // ✅ PERHATIKAN: Parameter diganti dari $criteria ke $criterion
     public function show(Criteria $criterion)
     {
         return view('criteria.show', compact('criterion'));
     }
 
-    // ✅ PERHATIKAN: Parameter diganti dari $criteria ke $criterion
     public function edit(Criteria $criterion)
     {
         return view('criteria.edit', compact('criterion'));
     }
 
-    // ✅ PERHATIKAN: Parameter diganti dari $criteria ke $criterion
     public function update(Request $request, Criteria $criterion)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:10|unique:criteria,code,' . $criterion->id,
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'code' => 'required|string|max:10|unique:criteria,code,' . $criterion->id . '|regex:/^[A-Z0-9]+$/',
+                'name' => 'required|string|max:255|min:3',
+                'description' => 'nullable|string|max:1000',
+                'is_active' => 'boolean',
+            ], [
+                'code.required' => 'Kode kriteria wajib diisi',
+                'code.unique' => 'Kode kriteria sudah digunakan',
+                'code.regex' => 'Kode kriteria hanya boleh huruf kapital dan angka',
+                'name.required' => 'Nama kriteria wajib diisi',
+                'name.min' => 'Nama kriteria minimal 3 karakter',
+                'description.max' => 'Deskripsi maksimal 1000 karakter',
+            ]);
 
-        $validated['is_active'] = $request->has('is_active');
+            DB::beginTransaction();
 
-        $criterion->update($validated);
+            $validated['is_active'] = $request->has('is_active');
 
-        return redirect()
-            ->route('criteria.index')
-            ->with('success', 'Kriteria berhasil diperbarui!');
+            $criterion->update($validated);
+
+            DB::commit();
+
+            return redirect()
+                ->route('criteria.index')
+                ->with('success', 'Kriteria berhasil diperbarui!');
+        } catch (ValidationException $e) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors($e->errors())
+                ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
-    // ✅ PERHATIKAN: Parameter diganti dari $criteria ke $criterion
     public function destroy(Criteria $criterion)
     {
-        $criterion->delete();
+        try {
+            // Check if criteria has comparisons
+            if ($criterion->comparisons1()->count() > 0 || $criterion->comparisons2()->count() > 0) {
+                return redirect()
+                    ->back()
+                    ->with('warning', 'Kriteria tidak dapat dihapus karena sudah digunakan dalam perbandingan AHP. Hapus perbandingan terlebih dahulu.');
+            }
 
-        return redirect()
-            ->route('criteria.index')
-            ->with('success', 'Kriteria berhasil dihapus!');
+            // Check if criteria has assessments
+            if ($criterion->assessments()->count() > 0) {
+                return redirect()
+                    ->back()
+                    ->with('warning', 'Kriteria tidak dapat dihapus karena sudah digunakan dalam penilaian supplier. Hapus penilaian terlebih dahulu.');
+            }
+
+            DB::beginTransaction();
+
+            $criterion->delete();
+
+            DB::commit();
+
+            return redirect()
+                ->route('criteria.index')
+                ->with('success', 'Kriteria berhasil dihapus!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan saat menghapus kriteria: ' . $e->getMessage());
+        }
     }
 }
