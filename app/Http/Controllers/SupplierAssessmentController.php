@@ -7,6 +7,9 @@ use App\Models\Supplier;
 use App\Models\SupplierAssessment;
 use App\Services\RankingService;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\RankingExport;
 
 class SupplierAssessmentController extends Controller
 {
@@ -118,5 +121,75 @@ class SupplierAssessmentController extends Controller
 
         return redirect()->route('supplier-assessments.index')
             ->with('success', 'Semua penilaian berhasil direset');
+    }
+
+    /**
+     * Export Ranking to PDF
+     */
+    public function exportPdf()
+    {
+        $result = $this->rankingService->calculateRanking();
+
+        if (isset($result['error'])) {
+            return redirect()->back()->with('error', $result['error']);
+        }
+
+        $rankings = $result['rankings'];
+        $criterias = $result['criterias'];
+
+        $pdf = Pdf::loadView('supplier-assessments.ranking-pdf', compact('rankings', 'criterias'))
+            ->setPaper('a4', 'landscape')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'sans-serif'
+            ]);
+
+        return $pdf->download('ranking-supplier-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Export Ranking to Excel
+     */
+    public function exportExcel()
+    {
+        $result = $this->rankingService->calculateRanking();
+
+        if (isset($result['error'])) {
+            return redirect()->back()->with('error', $result['error']);
+        }
+
+        $rankings = $result['rankings'];
+        $criterias = $result['criterias'];
+
+        return Excel::download(
+            new RankingExport($rankings, $criterias),
+            'ranking-supplier-' . date('Y-m-d') . '.xlsx'
+        );
+    }
+
+    /**
+     * Export Detail AHP Calculation to PDF
+     */
+    public function exportDetailPdf()
+    {
+        $result = $this->rankingService->calculateRanking();
+
+        if (isset($result['error'])) {
+            return redirect()->back()->with('error', $result['error']);
+        }
+
+        $rankings = $result['rankings'];
+        $criterias = $result['criterias'];
+
+        $pdf = Pdf::loadView('supplier-assessments.detail-pdf', compact('rankings', 'criterias'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'sans-serif'
+            ]);
+
+        return $pdf->download('detail-perhitungan-ahp-' . date('Y-m-d') . '.pdf');
     }
 }

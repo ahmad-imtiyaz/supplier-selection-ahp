@@ -5,25 +5,76 @@
 @section('content')
 <div class="space-y-6">
 
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Ranking Supplier</h1>
-            <p class="text-gray-600 mt-1">Hasil perhitungan peringkat supplier berdasarkan AHP</p>
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <a href="{{ route('supplier-assessments.index') }}" 
-               class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-center">
-                <i class="fas fa-arrow-left mr-2"></i>Kembali
-            </a>
-
-            <button onclick="window.print()" 
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
-                <i class="fas fa-print mr-2"></i>Cetak
-            </button>
-        </div>
+<!-- Header -->
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Ranking Supplier</h1>
+        <p class="text-gray-600 mt-1">Hasil perhitungan peringkat supplier berdasarkan AHP</p>
     </div>
+
+    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <a href="{{ route('supplier-assessments.index') }}" 
+           class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-center">
+            <i class="fas fa-arrow-left mr-2"></i>Kembali
+        </a>
+
+        <!-- Export Dropdown -->
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" 
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-center w-full sm:w-auto flex items-center justify-center">
+                <i class="fas fa-download mr-2"></i>Export
+                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+            </button>
+
+            <div x-show="open" 
+                 @click.away="open = false"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                
+                <div class="py-1">
+
+                    <a href="{{ route('supplier-assessments.export.pdf') }}" 
+                       class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
+                        <i class="fas fa-file-pdf text-red-500 mr-3 w-5"></i>
+                        <div>
+                            <div class="font-medium">Export PDF</div>
+                            <div class="text-xs text-gray-500">Ranking lengkap</div>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('supplier-assessments.export.excel') }}" 
+                       class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition">
+                        <i class="fas fa-file-excel text-green-500 mr-3 w-5"></i>
+                        <div>
+                            <div class="font-medium">Export Excel</div>
+                            <div class="text-xs text-gray-500">Format XLSX</div>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('supplier-assessments.export.detail') }}" 
+                       class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition border-t border-gray-100">
+                        <i class="fas fa-file-alt text-blue-500 mr-3 w-5"></i>
+                        <div>
+                            <div class="font-medium">Detail Perhitungan</div>
+                            <div class="text-xs text-gray-500">PDF lengkap dengan formula</div>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <button onclick="window.print()" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
+            <i class="fas fa-print mr-2"></i>Cetak
+        </button>
+    </div>
+</div>
 
     <!-- Podium -->
     @if(count($rankings) >= 3)
