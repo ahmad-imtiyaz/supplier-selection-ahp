@@ -11,11 +11,16 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Alpine.js x-cloak style -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body class="bg-gray-100">
-    <div class="min-h-screen">
+    <div class="min-h-screen" x-data="{ open: false, mobileMenu: false }">
         <!-- Navbar -->
-        <nav class="bg-white border-b border-gray-200" x-data="{ open: false, mobileMenu: false }">
+        <nav class="bg-white border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex justify-between h-16 w-full">
@@ -73,7 +78,10 @@
                                 </svg>
                             </button>
 
-                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                            <div x-show="open" 
+                                 x-cloak
+                                 @click.away="open = false" 
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
                                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -91,6 +99,7 @@
         <!-- Sidebar Mobile -->
         <div 
             x-show="mobileMenu"
+            x-cloak
             class="fixed inset-0 z-40 flex sm:hidden"
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0"
@@ -112,7 +121,15 @@
                  x-transition:leave-start="translate-x-0"
                  x-transition:leave-end="-translate-x-full"
             >
-                <h2 class="text-lg font-bold mb-4">Menu</h2>
+                <!-- Close Button -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">Menu</h2>
+                    <button @click="mobileMenu = false" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
 
                 <div class="space-y-3">
                     <a href="{{ route('dashboard') }}" 
@@ -139,6 +156,21 @@
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Perbandingan AHP
                     </a>
+
+                    <hr class="my-3">
+
+                    <!-- User Menu di Mobile -->
+                    <a href="{{ route('profile.edit') }}" 
+                       class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
+                        Profile
+                    </a>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="block w-full text-left text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
+                            Logout
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -221,6 +253,7 @@
     <div x-data="{ loading: false }" 
          @loading.window="loading = $event.detail"
          x-show="loading"
+         x-cloak
          class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -272,8 +305,7 @@
         @confirm-dialog.window="open($event.detail)"
         x-show="show"
         x-cloak
-        class="fixed inset-0 z-50 overflow-y-auto"
-        style="display: none;">
+        class="fixed inset-0 z-50 overflow-y-auto">
         
         <!-- Backdrop -->
         <div x-show="show"

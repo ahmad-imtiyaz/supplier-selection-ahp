@@ -1,47 +1,198 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Login - AHP Supplier</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .float-icon {
+            animation: float 3s ease-in-out infinite;
+        }
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+        .circle-blur {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Background with Gradient -->
+    <div class="min-h-screen gradient-bg flex items-center justify-center px-4 py-12 relative overflow-hidden">
+        
+        <!-- Decorative Circles -->
+        <div class="circle-blur" style="width: 288px; height: 288px; top: 40px; left: -80px; filter: blur(48px);"></div>
+        <div class="circle-blur" style="width: 384px; height: 384px; bottom: 40px; right: -80px; filter: blur(48px);"></div>
+        <div class="circle-blur" style="width: 256px; height: 256px; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: blur(32px);"></div>
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <!-- Login Box -->
+        <div class="w-full max-w-md relative z-10">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 sm:p-10">
+                
+                <!-- Logo & Title -->
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 float-icon shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-chart-line text-3xl text-white"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">AHP Supplier</h1>
+                    <p class="text-gray-600">Selamat Datang! 👋</p>
+                    <p class="text-sm text-gray-500 mt-1">Silakan masuk ke akun Anda untuk melanjutkan</p>
+                </div>
+
+                <!-- Session Status -->
+                @if (session('status'))
+                    <div class="mb-6 p-4 rounded-lg flex items-start" style="background-color: #f0fdf4; border-left: 4px solid #22c55e;">
+                        <i class="fas fa-check-circle mt-0.5 mr-3" style="color: #22c55e;"></i>
+                        <span class="text-sm" style="color: #166534;">{{ session('status') }}</span>
+                    </div>
+                @endif
+
+                <!-- Error Messages -->
+                @if ($errors->any())
+                    <div class="mb-6 p-4 rounded-lg" style="background-color: #fef2f2; border-left: 4px solid #ef4444;">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle mt-0.5 mr-3" style="color: #ef4444;"></i>
+                            <div class="text-sm" style="color: #991b1b;">
+                                @foreach ($errors->all() as $error)
+                                    <p>{{ $error }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Login Form -->
+                <form method="POST" action="{{ route('login') }}" class="space-y-5">
+                    @csrf
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Email
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fas fa-envelope text-gray-400"></i>
+                            </div>
+                            <input 
+                                id="email" 
+                                type="email" 
+                                name="email" 
+                                value="{{ old('email') }}"
+                                required 
+                                autofocus 
+                                autocomplete="username"
+                                class="block w-full pl-12 pr-4 py-3.5 border rounded-xl focus:outline-none focus:ring-2 transition duration-200 @error('email') border-red-300 @else border-gray-200 @enderror"
+                                style="background-color: #f9fafb; @error('email') background-color: #fef2f2; @enderror"
+                                placeholder="nama@email.com"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Password
+                        </label>
+                        <div class="relative" x-data="{ show: false }">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input 
+                                id="password" 
+                                :type="show ? 'text' : 'password'"
+                                name="password" 
+                                required 
+                                autocomplete="current-password"
+                                class="block w-full pl-12 pr-12 py-3.5 border rounded-xl focus:outline-none focus:ring-2 transition duration-200 @error('password') border-red-300 @else border-gray-200 @enderror"
+                                style="background-color: #f9fafb; @error('password') background-color: #fef2f2; @enderror"
+                                placeholder="••••••••"
+                            >
+                            <button 
+                                type="button"
+                                @click="show = !show"
+                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition"
+                            >
+                                <i :class="show ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember & Forgot -->
+                    <div class="flex items-center justify-between">
+                        <label for="remember_me" class="flex items-center cursor-pointer">
+                            <input 
+                                id="remember_me" 
+                                type="checkbox" 
+                                name="remember"
+                                class="h-4 w-4 rounded cursor-pointer"
+                                style="color: #667eea;"
+                            >
+                            <span class="ml-2 text-sm text-gray-600">Ingat saya</span>
+                        </label>
+
+                        @if (Route::has('password.request'))
+                            <a href="{{ route('password.request') }}" class="text-sm font-semibold transition" style="color: #667eea;">
+                                Lupa password?
+                            </a>
+                        @endif
+                    </div>
+
+                    <!-- Login Button -->
+                    <button 
+                        type="submit"
+                        class="w-full text-white font-bold py-4 px-6 rounded-xl transition duration-300 shadow-lg flex items-center justify-center"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"
+                    >
+                        <span>Masuk</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </form>
+
+                <!-- Register Link -->
+                @if (Route::has('register'))
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-600">
+                            Belum punya akun? 
+                            <a href="{{ route('register') }}" class="font-semibold transition" style="color: #667eea;">
+                                Daftar sekarang
+                            </a>
+                        </p>
+                    </div>
+                @endif
+
+                <!-- Footer -->
+                <div class="mt-8 pt-6 text-center" style="border-top: 1px solid #e5e7eb;">
+                    <p class="text-xs text-gray-500">&copy; {{ date('Y') }} AHP Supplier System. All rights reserved.</p>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+    <!-- Alpine.js -->
+    <script src="//unpkg.com/alpinejs" defer></script>
+</body>
+</html>
