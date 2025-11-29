@@ -6,6 +6,7 @@ use App\Http\Controllers\CriteriaController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CriteriaComparisonController;
 use App\Http\Controllers\SupplierAssessmentController;
+use App\Http\Controllers\UserManagementController; // ⭐ PENTING: Pastikan ini ada
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -34,28 +35,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [CriteriaComparisonController::class, 'store'])->name('store');
         Route::post('/calculate', [CriteriaComparisonController::class, 'calculate'])->name('calculate');
         Route::get('/result', [CriteriaComparisonController::class, 'result'])->name('result');
-
-        // Reset harus sebelum dynamic route
         Route::delete('/reset', [CriteriaComparisonController::class, 'reset'])->name('reset');
-
-        // Dynamic route terakhir
         Route::delete('/{criteriaComparison}', [CriteriaComparisonController::class, 'destroy'])->name('destroy');
     });
 
-    // Supplier Assessment (sudah digabung + route EXPORT)
+    // Supplier Assessment
     Route::prefix('supplier-assessments')->name('supplier-assessments.')->group(function () {
         Route::get('/', [SupplierAssessmentController::class, 'index'])->name('index');
         Route::get('/create', [SupplierAssessmentController::class, 'create'])->name('create');
         Route::post('/', [SupplierAssessmentController::class, 'store'])->name('store');
         Route::get('/ranking', [SupplierAssessmentController::class, 'ranking'])->name('ranking');
-
-        // Tambahan route export
         Route::get('/export-pdf', [SupplierAssessmentController::class, 'exportPdf'])->name('export.pdf');
         Route::get('/export-excel', [SupplierAssessmentController::class, 'exportExcel'])->name('export.excel');
         Route::get('/export-detail-pdf', [SupplierAssessmentController::class, 'exportDetailPdf'])->name('export.detail');
-
         Route::delete('/{supplierAssessment}', [SupplierAssessmentController::class, 'destroy'])->name('destroy');
         Route::post('/reset', [SupplierAssessmentController::class, 'reset'])->name('reset');
+    });
+
+    // 🔥 USER MANAGEMENT - ADMIN ONLY (PASTIKAN INI ADA!)
+    Route::middleware('admin')->prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserManagementController::class, 'index'])->name('index');
+        Route::get('/{user}', [UserManagementController::class, 'show'])->name('show');
+        Route::patch('/{user}/promote', [UserManagementController::class, 'promoteToAdmin'])->name('promote');
+        Route::patch('/{user}/demote', [UserManagementController::class, 'demoteToUser'])->name('demote');
+        Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
     });
 });
 
