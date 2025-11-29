@@ -18,37 +18,33 @@
     <!-- User Profile Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <!-- Header with Gradient -->
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-8">
-            <div class="flex items-center space-x-4">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 sm:px-6 py-6 sm:py-8">
+            <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <!-- Avatar -->
                 <div class="flex-shrink-0">
-                    <div class="w-20 h-20 rounded-full bg-white flex items-center justify-center text-3xl font-bold text-blue-600 shadow-lg">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white flex items-center justify-center text-2xl sm:text-3xl font-bold text-blue-600 shadow-lg">
                         {{ strtoupper(substr($user->name, 0, 1)) }}
                     </div>
                 </div>
                 
                 <!-- User Info -->
-                <div class="flex-1">
-                    <h1 class="text-2xl font-bold text-white mb-1">{{ $user->name }}</h1>
+                <div class="flex-1 text-center sm:text-left">
+                    <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">{{ $user->name }}</h1>
                     <p class="text-blue-100 text-sm">{{ $user->email }}</p>
-                    <div class="mt-3 flex items-center space-x-3">
+                    <div class="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2">
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
                             </svg>
                             {{ ucfirst($user->role) }}
                         </span>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $user->is_active ? 'bg-green-400/30 text-white' : 'bg-red-400/30 text-white' }} backdrop-blur-sm">
-                            <span class="w-1.5 h-1.5 rounded-full {{ $user->is_active ? 'bg-white' : 'bg-white' }} mr-1.5"></span>
-                            {{ $user->is_active ? 'Aktif' : 'Nonaktif' }}
-                        </span>
                     </div>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex-shrink-0">
+                <div class="flex-shrink-0 w-full sm:w-auto">
                     <a href="{{ route('users.edit', $user) }}" 
-                       class="inline-flex items-center px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl">
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
@@ -59,15 +55,15 @@
         </div>
 
         <!-- User Details -->
-        <div class="px-6 py-5 border-b border-gray-200">
-            <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="px-4 sm:px-6 py-5 border-b border-gray-200">
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                     <dt class="text-sm font-medium text-gray-500 mb-1">Nama Lengkap</dt>
                     <dd class="text-base text-gray-900">{{ $user->name }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm font-medium text-gray-500 mb-1">Email</dt>
-                    <dd class="text-base text-gray-900">{{ $user->email }}</dd>
+                    <dd class="text-base text-gray-900 break-all">{{ $user->email }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm font-medium text-gray-500 mb-1">Role</dt>
@@ -78,21 +74,8 @@
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500 mb-1">Status</dt>
-                    <dd>
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium {{ $user->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                            <span class="w-1.5 h-1.5 rounded-full {{ $user->is_active ? 'bg-green-600' : 'bg-red-600' }} mr-1.5"></span>
-                            {{ $user->is_active ? 'Aktif' : 'Nonaktif' }}
-                        </span>
-                    </dd>
-                </div>
-                <div>
                     <dt class="text-sm font-medium text-gray-500 mb-1">Bergabung Sejak</dt>
                     <dd class="text-base text-gray-900">{{ $user->created_at->format('d M Y, H:i') }}</dd>
-                </div>
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 mb-1">Terakhir Diupdate</dt>
-                    <dd class="text-base text-gray-900">{{ $user->updated_at->format('d M Y, H:i') }}</dd>
                 </div>
             </dl>
         </div>
@@ -101,36 +84,36 @@
     <!-- Activity Log Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <!-- Header -->
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <div class="flex items-center justify-between">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                         </svg>
                     </div>
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-900">Riwayat Aktivitas</h2>
-                        <p class="text-sm text-gray-500">Track semua aktivitas user di sistem</p>
+                        <h2 class="text-base sm:text-lg font-semibold text-gray-900">Riwayat Aktivitas</h2>
+                        <p class="text-xs sm:text-sm text-gray-500">Track semua aktivitas user di sistem</p>
                     </div>
                 </div>
                 
                 <!-- Statistics -->
-                <div class="flex items-center space-x-6 text-sm">
+                <div class="grid grid-cols-4 gap-3 sm:gap-4 lg:flex lg:items-center lg:space-x-6 text-sm">
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-gray-900">{{ $activityStats['total'] ?? 0 }}</div>
-                        <div class="text-xs text-gray-500">Total Aktivitas</div>
+                        <div class="text-lg sm:text-2xl font-bold text-gray-900">{{ $activityStats['total'] ?? 0 }}</div>
+                        <div class="text-xs text-gray-500">Total</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600">{{ $activityStats['create'] ?? 0 }}</div>
+                        <div class="text-lg sm:text-2xl font-bold text-green-600">{{ $activityStats['create'] ?? 0 }}</div>
                         <div class="text-xs text-gray-500">Create</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600">{{ $activityStats['update'] ?? 0 }}</div>
+                        <div class="text-lg sm:text-2xl font-bold text-blue-600">{{ $activityStats['update'] ?? 0 }}</div>
                         <div class="text-xs text-gray-500">Update</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-red-600">{{ $activityStats['delete'] ?? 0 }}</div>
+                        <div class="text-lg sm:text-2xl font-bold text-red-600">{{ $activityStats['delete'] ?? 0 }}</div>
                         <div class="text-xs text-gray-500">Delete</div>
                     </div>
                 </div>
@@ -138,36 +121,36 @@
         </div>
 
         <!-- Filter Tabs -->
-        <div class="px-6 py-4 bg-white border-b border-gray-200">
-            <div class="flex items-center space-x-2 overflow-x-auto">
+        <div class="px-4 sm:px-6 py-4 bg-white border-b border-gray-200">
+            <div class="flex items-center space-x-2 overflow-x-auto pb-2 sm:pb-0">
                 <button onclick="filterActivities('all')" 
-                        class="filter-tab active px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
+                        class="filter-tab active px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
                     Semua
                 </button>
                 <button onclick="filterActivities('Supplier')" 
-                        class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                    <svg class="w-4 h-4 inline mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                        class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
                     </svg>
                     Supplier
                 </button>
                 <button onclick="filterActivities('Criteria')" 
-                        class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                    <svg class="w-4 h-4 inline mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                        class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                     </svg>
                     Kriteria
                 </button>
                 <button onclick="filterActivities('CriteriaComparison')" 
-                        class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                    <svg class="w-4 h-4 inline mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                        class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                     </svg>
                     AHP
                 </button>
                 <button onclick="filterActivities('SupplierAssessment')" 
-                        class="filter-tab px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                    <svg class="w-4 h-4 inline mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                        class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
                         <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
                     </svg>
@@ -177,30 +160,30 @@
         </div>
 
         <!-- Activity Timeline -->
-        <div class="px-6 py-4">
+        <div class="px-4 sm:px-6 py-4">
             @if($activities->isEmpty())
                 <div class="text-center py-12">
-                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
                     <p class="text-gray-500 text-sm">Belum ada aktivitas yang tercatat</p>
                 </div>
             @else
-                <div class="space-y-4" id="activity-list">
+                <div class="space-y-3 sm:space-y-4" id="activity-list">
                     @foreach($activities as $log)
-                        <div class="activity-item border-l-4 {{ $log->action_badge_color }} bg-gray-50 rounded-r-lg p-4 hover:shadow-md transition-all duration-200" 
+                        <div class="activity-item border-l-4 {{ $log->action_badge_color }} bg-gray-50 rounded-r-lg p-3 sm:p-4 hover:shadow-md transition-all duration-200" 
                              data-model="{{ $log->model }}">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-start space-x-3 flex-1">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
+                                <div class="flex items-start space-x-3 flex-1 min-w-0">
                                     <!-- Icon -->
-                                    <div class="flex-shrink-0 w-10 h-10 rounded-lg {{ $log->action_badge_color }} bg-opacity-10 flex items-center justify-center">
+                                    <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg {{ $log->action_badge_color }} bg-opacity-10 flex items-center justify-center">
                                         {!! $log->action_icon !!}
                                     </div>
                                     
                                     <!-- Content -->
                                     <div class="flex-1 min-w-0">
                                         <!-- Action & Model -->
-                                        <div class="flex items-center space-x-2 mb-1">
+                                        <div class="flex flex-wrap items-center gap-2 mb-1">
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $log->action_badge_color }} bg-opacity-10">
                                                 {{ $log->action_text }}
                                             </span>
@@ -209,38 +192,32 @@
                                         </div>
                                         
                                         <!-- Description -->
-                                        <p class="text-sm text-gray-900 mb-2">{{ $log->description }}</p>
+                                        <p class="text-sm text-gray-900 mb-2 break-words">{{ $log->description }}</p>
                                         
-                                        <!-- Changes (if any) -->
-                                        @if($log->hasValueChanges())
-                                            <div class="mt-3 space-y-2">
-                                                @foreach($log->changes_summary as $change)
-                                                    <div class="flex items-start space-x-2 text-xs bg-white rounded-lg p-3 border border-gray-200">
-                                                        <svg class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                                                        </svg>
-                                                        <div class="flex-1 min-w-0">
-                                                            <span class="font-medium text-gray-700">{{ $change['field'] }}:</span>
-                                                            <div class="flex items-center space-x-2 mt-1">
-                                                                <span class="inline-flex items-center px-2 py-1 rounded bg-red-50 text-red-700 border border-red-200">
-                                                                    {{ $change['old'] }}
-                                                                </span>
-                                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                                                                </svg>
-                                                                <span class="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200">
-                                                                    {{ $change['new'] }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
+                                      <!-- Changes (if any) -->
+@if($log->hasValueChanges())
+    <div class="mt-3 space-y-2">
+        @foreach($log->changes_summary as $change)
+            <div class="flex items-start space-x-2 text-xs bg-white rounded-lg p-2 sm:p-3 border border-gray-200">
+                <div class="flex-1 min-w-0">
+                    <span class="font-medium text-gray-700 block mb-1">{{ $change['field'] }}:</span>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-1 rounded bg-red-50 text-red-700 border border-red-200 text-xs break-all">
+                            {{ $change['old'] }}
+                        </span>
+                        <span class="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 text-xs break-all">
+                            {{ $change['new'] }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+@endif
                                         
-                                        <!-- IP & Browser Info -->
+                                        <!-- IP & Browser Info (Hidden on mobile) -->
                                         @if($log->ip_address || $log->user_agent)
-                                            <div class="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                                            <div class="mt-2 hidden sm:flex items-center space-x-4 text-xs text-gray-500">
                                                 @if($log->ip_address)
                                                     <span class="flex items-center">
                                                         <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -263,7 +240,7 @@
                                 </div>
                                 
                                 <!-- Timestamp -->
-                                <div class="flex-shrink-0 text-right ml-4">
+                                <div class="flex-shrink-0 text-left sm:text-right sm:ml-4">
                                     <div class="text-xs font-medium text-gray-900">{{ $log->time_ago }}</div>
                                     <div class="text-xs text-gray-500 mt-0.5">{{ $log->created_at->format('d M Y') }}</div>
                                     <div class="text-xs text-gray-400">{{ $log->created_at->format('H:i') }}</div>
@@ -358,6 +335,25 @@ document.addEventListener('DOMContentLoaded', function() {
     transform: translateX(4px);
 }
 
+/* Responsive scrollbar for filter tabs */
+.overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
 /* Color classes for actions */
 .border-green-500 { border-left-color: #10b981; }
 .border-blue-500 { border-left-color: #3b82f6; }
@@ -379,5 +375,32 @@ document.addEventListener('DOMContentLoaded', function() {
 .text-red-500 { color: #ef4444; }
 .text-purple-500 { color: #8b5cf6; }
 .text-indigo-500 { color: #6366f1; }
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+    .activity-item:hover {
+        transform: translateX(2px);
+    }
+}
+/* Mobile horizontal scroll untuk filter tabs */
+@media (max-width: 640px) {
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling di iOS */
+        scrollbar-width: thin; /* Firefox */
+    }
+    
+    /* Pastikan container bisa di-scroll */
+    .flex.overflow-x-auto {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Hapus padding bottom di mobile agar tidak ada space */
+    .overflow-x-auto.pb-2 {
+        padding-bottom: 0.5rem !important;
+    }
+}
 </style>
 @endsection

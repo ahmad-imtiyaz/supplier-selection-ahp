@@ -26,11 +26,11 @@ class UserManagementController extends Controller
      */
     public function show(User $user)
     {
-        // Load activities dengan pagination
+        // Load activities dengan pagination (5 per page untuk better UX)
         $activities = ActivityLog::byUser($user->id)
             ->with('user')
             ->latest()
-            ->paginate(20);
+            ->paginate(5); // ← Changed from 20 to 5
 
         // Get activity statistics
         $activityStats = ActivityLogHelper::getActivityStats($user->id);
