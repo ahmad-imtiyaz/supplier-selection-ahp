@@ -6,6 +6,7 @@ use App\Models\Criteria;
 use App\Models\Supplier;
 use App\Models\SupplierAssessment;
 use App\Services\RankingService;
+use App\Helpers\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -113,7 +114,30 @@ class SupplierAssessmentController extends Controller
 
             DB::beginTransaction();
 
-            SupplierAssessment::updateOrCreate(
+            // Get supplier & criteria untuk logging
+            $supplier = Supplier::find($request->supplier_id);
+            $criteria = Criteria::find($request->criteria_id);
+
+            // 🔥 CHECK IF UPDATE OR CREATE
+            $existingAssessment = SupplierAssessment::where('supplier_id', $request->supplier_id)
+                ->where('criteria_id', $request->criteria_id)
+                ->first();
+
+            $isUpdate = $existingAssessment !== null;
+
+            // Capture old values jika update
+            $oldValues = null;
+            if ($isUpdate) {
+                $oldValues = [
+                    'supplier' => $supplier->name . ' (' . $supplier->code . ')',
+                    'criteria' => $criteria->name . ' (' . $criteria->code . ')',
+                    'score' => (float) $existingAssessment->score,
+                    'notes' => $existingAssessment->notes,
+                ];
+            }
+
+            // Store/Update assessment
+            $assessment = SupplierAssessment::updateOrCreate(
                 [
                     'supplier_id' => $request->supplier_id,
                     'criteria_id' => $request->criteria_id,
@@ -123,6 +147,32 @@ class SupplierAssessmentController extends Controller
                     'notes' => $request->notes,
                 ]
             );
+
+            // New values untuk logging
+            $newValues = [
+                'supplier' => $supplier->name . ' (' . $supplier->code . ')',
+                'criteria' => $criteria->name . ' (' . $criteria->code . ')',
+                'score' => (float) $assessment->score,
+                'notes' => $assessment->notes,
+            ];
+
+            // 🔥 LOG ACTIVITY
+            if ($isUpdate) {
+                ActivityLogHelper::logUpdate(
+                    'SupplierAssessment',
+                    $assessment->id,
+                    $supplier->name . ' - ' . $criteria->name,
+                    $oldValues,
+                    $newValues
+                );
+            } else {
+                ActivityLogHelper::logCreate(
+                    'SupplierAssessment',
+                    $assessment->id,
+                    $supplier->name . ' pada kriteria ' . $criteria->name . ' = ' . $assessment->score,
+                    $newValues
+                );
+            }
 
             DB::commit();
 
@@ -189,6 +239,23 @@ class SupplierAssessmentController extends Controller
         try {
             DB::beginTransaction();
 
+            // Get supplier & criteria untuk logging
+            $supplier = $supplierAssessment->supplier;
+            $criteria = $supplierAssessment->criteria;
+
+            // 🔥 LOG ACTIVITY SEBELUM DELETE
+            ActivityLogHelper::logDelete(
+                'SupplierAssessment',
+                $supplierAssessment->id,
+                $supplier->name . ' - ' . $criteria->name,
+                [
+                    'supplier' => $supplier->name . ' (' . $supplier->code . ')',
+                    'criteria' => $criteria->name . ' (' . $criteria->code . ')',
+                    'score' => (float) $supplierAssessment->score,
+                    'notes' => $supplierAssessment->notes,
+                ]
+            );
+
             $supplierAssessment->delete();
 
             DB::commit();
@@ -212,7 +279,16 @@ class SupplierAssessmentController extends Controller
         try {
             DB::beginTransaction();
 
+            // 🔥 COUNT DATA SEBELUM RESET
+            $totalAssessments = SupplierAssessment::count();
+
             SupplierAssessment::truncate();
+
+            // 🔥 LOG RESET ACTIVITY
+            ActivityLogHelper::logReset(
+                'SupplierAssessment',
+                "Mereset semua penilaian supplier - {$totalAssessments} penilaian dihapus"
+            );
 
             DB::commit();
 

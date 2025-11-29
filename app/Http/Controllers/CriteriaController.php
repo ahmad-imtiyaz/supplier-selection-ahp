@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Criteria;
+use App\Helpers\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -42,7 +43,20 @@ class CriteriaController extends Controller
             $validated['is_active'] = $request->has('is_active');
             $validated['weight'] = 0;
 
-            Criteria::create($validated);
+            $criteria = Criteria::create($validated);
+
+            // 🔥 LOG ACTIVITY
+            ActivityLogHelper::logCreate(
+                'Criteria',
+                $criteria->id,
+                $criteria->name . ' (' . $criteria->code . ')',
+                [
+                    'code' => $criteria->code,
+                    'name' => $criteria->name,
+                    'description' => $criteria->description,
+                    'is_active' => $criteria->is_active,
+                ]
+            );
 
             DB::commit();
 
@@ -94,9 +108,31 @@ class CriteriaController extends Controller
 
             DB::beginTransaction();
 
+            // 🔥 CAPTURE OLD VALUES
+            $oldValues = [
+                'code' => $criterion->code,
+                'name' => $criterion->name,
+                'description' => $criterion->description,
+                'is_active' => $criterion->is_active,
+            ];
+
             $validated['is_active'] = $request->has('is_active');
 
             $criterion->update($validated);
+
+            // 🔥 LOG ACTIVITY
+            ActivityLogHelper::logUpdate(
+                'Criteria',
+                $criterion->id,
+                $criterion->name . ' (' . $criterion->code . ')',
+                $oldValues,
+                [
+                    'code' => $criterion->code,
+                    'name' => $criterion->name,
+                    'description' => $criterion->description,
+                    'is_active' => $criterion->is_active,
+                ]
+            );
 
             DB::commit();
 
@@ -137,6 +173,18 @@ class CriteriaController extends Controller
             }
 
             DB::beginTransaction();
+
+            // 🔥 LOG ACTIVITY SEBELUM DELETE
+            ActivityLogHelper::logDelete(
+                'Criteria',
+                $criterion->id,
+                $criterion->name . ' (' . $criterion->code . ')',
+                [
+                    'code' => $criterion->code,
+                    'name' => $criterion->name,
+                    'description' => $criterion->description,
+                ]
+            );
 
             $criterion->delete();
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Criteria;
 use App\Models\CriteriaComparison;
 use App\Services\AHPService;
+use App\Helpers\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -116,7 +117,30 @@ class CriteriaComparisonController extends Controller
 
             DB::beginTransaction();
 
-            CriteriaComparison::updateOrCreate(
+            // Get criteria names untuk logging
+            $criteria1 = Criteria::find($request->criteria_1_id);
+            $criteria2 = Criteria::find($request->criteria_2_id);
+
+            // 🔥 CHECK IF UPDATE OR CREATE
+            $existingComparison = CriteriaComparison::where('criteria_1_id', $request->criteria_1_id)
+                ->where('criteria_2_id', $request->criteria_2_id)
+                ->first();
+
+            $isUpdate = $existingComparison !== null;
+
+            // Capture old values jika update
+            $oldValues = null;
+            if ($isUpdate) {
+                $oldValues = [
+                    'criteria_1' => $criteria1->name . ' (' . $criteria1->code . ')',
+                    'criteria_2' => $criteria2->name . ' (' . $criteria2->code . ')',
+                    'value' => (float) $existingComparison->value,
+                    'note' => $existingComparison->note,
+                ];
+            }
+
+            // Store/Update comparison
+            $comparison = CriteriaComparison::updateOrCreate(
                 [
                     'criteria_1_id' => $request->criteria_1_id,
                     'criteria_2_id' => $request->criteria_2_id,
@@ -126,6 +150,32 @@ class CriteriaComparisonController extends Controller
                     'note' => $request->note,
                 ]
             );
+
+            // New values untuk logging
+            $newValues = [
+                'criteria_1' => $criteria1->name . ' (' . $criteria1->code . ')',
+                'criteria_2' => $criteria2->name . ' (' . $criteria2->code . ')',
+                'value' => (float) $comparison->value,
+                'note' => $comparison->note,
+            ];
+
+            // 🔥 LOG ACTIVITY
+            if ($isUpdate) {
+                ActivityLogHelper::logUpdate(
+                    'CriteriaComparison',
+                    $comparison->id,
+                    $criteria1->name . ' vs ' . $criteria2->name,
+                    $oldValues,
+                    $newValues
+                );
+            } else {
+                ActivityLogHelper::logCreate(
+                    'CriteriaComparison',
+                    $comparison->id,
+                    $criteria1->name . ' vs ' . $criteria2->name . ' = ' . $comparison->value,
+                    $newValues
+                );
+            }
 
             DB::commit();
 
@@ -169,6 +219,31 @@ class CriteriaComparisonController extends Controller
 
             // Save weights
             $this->ahpService->saveWeights();
+
+            // 🔥 LOG CALCULATE ACTIVITY
+            $weightsData = [];
+            foreach ($result['weights'] as $criteriaId => $weight) {
+                $criteria = Criteria::find($criteriaId);
+                if ($criteria) {
+                    $weightsData[$criteria->code] = [
+                        'name' => $criteria->name,
+                        'weight' => round($weight, 4),
+                    ];
+                }
+            }
+
+            $crStatus = $result['is_consistent'] ? 'KONSISTEN' : 'TIDAK KONSISTEN';
+            $description = "Menghitung bobot kriteria menggunakan AHP - Status: {$crStatus} (CR = " . number_format($result['consistency_ratio'], 4) . ")";
+
+            ActivityLogHelper::logCalculate(
+                $description,
+                [
+                    'weights' => $weightsData,
+                    'consistency_ratio' => $result['consistency_ratio'],
+                    'is_consistent' => $result['is_consistent'],
+                    'lambda_max' => $result['lambda_max'] ?? null,
+                ]
+            );
 
             DB::commit();
 
@@ -214,6 +289,23 @@ class CriteriaComparisonController extends Controller
         try {
             DB::beginTransaction();
 
+            // Get criteria names untuk logging
+            $criteria1 = $criteriaComparison->criteria1;
+            $criteria2 = $criteriaComparison->criteria2;
+
+            // 🔥 LOG ACTIVITY SEBELUM DELETE
+            ActivityLogHelper::logDelete(
+                'CriteriaComparison',
+                $criteriaComparison->id,
+                $criteria1->name . ' vs ' . $criteria2->name,
+                [
+                    'criteria_1' => $criteria1->name . ' (' . $criteria1->code . ')',
+                    'criteria_2' => $criteria2->name . ' (' . $criteria2->code . ')',
+                    'value' => (float) $criteriaComparison->value,
+                    'note' => $criteriaComparison->note,
+                ]
+            );
+
             $criteriaComparison->delete();
 
             DB::commit();
@@ -234,8 +326,18 @@ class CriteriaComparisonController extends Controller
         try {
             DB::beginTransaction();
 
+            // 🔥 COUNT DATA SEBELUM RESET
+            $totalComparisons = CriteriaComparison::count();
+            $affectedCriteria = Criteria::where('weight', '>', 0)->count();
+
             CriteriaComparison::truncate();
             Criteria::query()->update(['weight' => 0]);
+
+            // 🔥 LOG RESET ACTIVITY
+            ActivityLogHelper::logReset(
+                'CriteriaComparison',
+                "Mereset semua perbandingan kriteria - {$totalComparisons} perbandingan dan {$affectedCriteria} bobot kriteria dihapus"
+            );
 
             DB::commit();
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Supplier;
+use App\Helpers\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -46,7 +47,23 @@ class SupplierController extends Controller
 
             $validated['is_active'] = $request->has('is_active');
 
-            Supplier::create($validated);
+            $supplier = Supplier::create($validated);
+
+            // 🔥 LOG ACTIVITY
+            ActivityLogHelper::logCreate(
+                'Supplier',
+                $supplier->id,
+                $supplier->name . ' (' . $supplier->code . ')',
+                [
+                    'code' => $supplier->code,
+                    'name' => $supplier->name,
+                    'address' => $supplier->address,
+                    'phone' => $supplier->phone,
+                    'email' => $supplier->email,
+                    'contact_person' => $supplier->contact_person,
+                    'is_active' => $supplier->is_active,
+                ]
+            );
 
             DB::commit();
 
@@ -103,9 +120,37 @@ class SupplierController extends Controller
 
             DB::beginTransaction();
 
+            // 🔥 CAPTURE OLD VALUES SEBELUM UPDATE
+            $oldValues = [
+                'code' => $supplier->code,
+                'name' => $supplier->name,
+                'address' => $supplier->address,
+                'phone' => $supplier->phone,
+                'email' => $supplier->email,
+                'contact_person' => $supplier->contact_person,
+                'is_active' => $supplier->is_active,
+            ];
+
             $validated['is_active'] = $request->has('is_active');
 
             $supplier->update($validated);
+
+            // 🔥 LOG ACTIVITY WITH OLD & NEW VALUES
+            ActivityLogHelper::logUpdate(
+                'Supplier',
+                $supplier->id,
+                $supplier->name . ' (' . $supplier->code . ')',
+                $oldValues,
+                [
+                    'code' => $supplier->code,
+                    'name' => $supplier->name,
+                    'address' => $supplier->address,
+                    'phone' => $supplier->phone,
+                    'email' => $supplier->email,
+                    'contact_person' => $supplier->contact_person,
+                    'is_active' => $supplier->is_active,
+                ]
+            );
 
             DB::commit();
 
@@ -139,6 +184,20 @@ class SupplierController extends Controller
             }
 
             DB::beginTransaction();
+
+            // 🔥 LOG ACTIVITY SEBELUM DELETE
+            ActivityLogHelper::logDelete(
+                'Supplier',
+                $supplier->id,
+                $supplier->name . ' (' . $supplier->code . ')',
+                [
+                    'code' => $supplier->code,
+                    'name' => $supplier->name,
+                    'address' => $supplier->address,
+                    'phone' => $supplier->phone,
+                    'email' => $supplier->email,
+                ]
+            );
 
             $supplier->delete();
 
