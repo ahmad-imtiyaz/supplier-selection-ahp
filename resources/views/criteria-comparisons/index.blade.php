@@ -11,6 +11,13 @@
             <p class="mt-1 text-sm text-gray-500">
                 Lakukan perbandingan berpasangan antar kriteria menggunakan skala Saaty
             </p>
+            {{-- ✅ INFO: 2-Way Input --}}
+            <p class="mt-2 text-xs text-blue-600 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                Anda dapat mengisi perbandingan dari sel manapun (kecuali diagonal). Nilai kebalikan akan otomatis dihitung.
+            </p>
         </div>
         @if($progress['completed'] > 0)
         <div class="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
@@ -23,7 +30,7 @@
                 Lihat Hasil
             </a>
             <form action="{{ route('criteria-comparisons.reset') }}" method="POST" 
-                  onsubmit="return confirm('Yakin ingin reset semua perbandingan?')"
+                  onsubmit="return confirm('Yakin ingin reset semua perbandingan? Progress akan kembali ke 0.')"
                   class="w-full sm:w-auto">
                 @csrf
                 @method('DELETE')
@@ -51,6 +58,12 @@
             <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
                  style="width: {{ $progress['percentage'] }}%"></div>
         </div>
+        {{-- ✅ INFO: Hanya kriteria aktif --}}
+        @if($criterias->count() > 0)
+        <p class="mt-2 text-xs text-gray-500">
+            Menghitung dari {{ $criterias->count() }} kriteria aktif
+        </p>
+        @endif
     </div>
 
     @if($criterias->count() < 2)
@@ -117,10 +130,16 @@
                                             $cell = $matrix[$criteria1->id][$criteria2->id];
                                         @endphp
                                         
-                                        @if($cell['editable'])
+                                        {{-- ✅ DIAGONAL: Tidak editable --}}
+                                        @if(isset($cell['is_diagonal']) && $cell['is_diagonal'])
+                                            <span class="text-sm font-bold text-gray-900">1</span>
+                                        
+                                        {{-- ✅ CELL LAIN: Semua editable --}}
+                                        @else
                                             @if($cell['value'])
                                                 <div class="flex flex-col items-center gap-1.5">
-                                                    <span class="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                                    {{-- Display nilai dengan indikator jika reciprocal --}}
+                                                    <span class="text-sm font-medium {{ isset($cell['is_reciprocal']) && $cell['is_reciprocal'] ? 'text-blue-600' : 'text-gray-900' }} whitespace-nowrap">
                                                         {{ $cell['display'] }}
                                                     </span>
                                                     <div class="flex gap-1.5">
@@ -156,10 +175,6 @@
                                                     Bandingkan
                                                 </a>
                                             @endif
-                                        @else
-                                            <span class="text-sm {{ $cell['value'] == 1 ? 'font-bold text-gray-900' : 'text-gray-600' }}">
-                                                {{ $cell['display'] }}
-                                            </span>
                                         @endif
                                     </td>
                                 @endforeach

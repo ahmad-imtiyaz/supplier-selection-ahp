@@ -41,9 +41,11 @@ class AHPService
 
     /**
      * Build pairwise comparison matrix
+     * ✅ FIX: Hanya gunakan kriteria AKTIF
      */
     public function buildComparisonMatrix(): array
     {
+        // ✅ HANYA KRITERIA AKTIF
         $criterias = Criteria::where('is_active', true)->orderBy('code')->get();
         $n = $criterias->count();
         $matrix = array_fill(0, $n, array_fill(0, $n, 1));
@@ -53,12 +55,23 @@ class AHPService
                 if ($i === $j) {
                     $matrix[$i][$j] = 1;
                 } elseif ($i < $j) {
-                    $comparison = CriteriaComparison::where('criteria_1_id', $criteria1->id)
-                        ->where('criteria_2_id', $criteria2->id)
-                        ->first();
+                    // ✅ FIX: Cari comparison dengan normalisasi ID
+                    $comparison = $this->findComparison($criteria1->id, $criteria2->id);
 
-                    $matrix[$i][$j] = $comparison ? $comparison->value : 1;
-                    $matrix[$j][$i] = $comparison ? (1 / $comparison->value) : 1;
+                    if ($comparison) {
+                        // Jika criteria1 adalah criteria_1 di database
+                        if ($comparison->criteria_1_id == $criteria1->id) {
+                            $matrix[$i][$j] = $comparison->value;
+                            $matrix[$j][$i] = 1 / $comparison->value;
+                        } else {
+                            // Jika criteria1 adalah criteria_2 di database (kebalikan)
+                            $matrix[$i][$j] = 1 / $comparison->value;
+                            $matrix[$j][$i] = $comparison->value;
+                        }
+                    } else {
+                        $matrix[$i][$j] = 1;
+                        $matrix[$j][$i] = 1;
+                    }
                 }
             }
         }
@@ -71,7 +84,22 @@ class AHPService
     }
 
     /**
+     * ✅ NEW: Find comparison dengan normalisasi (bisa dari arah manapun)
+     */
+    private function findComparison($criteriaId1, $criteriaId2)
+    {
+        return CriteriaComparison::where(function ($query) use ($criteriaId1, $criteriaId2) {
+            $query->where('criteria_1_id', $criteriaId1)
+                ->where('criteria_2_id', $criteriaId2);
+        })->orWhere(function ($query) use ($criteriaId1, $criteriaId2) {
+            $query->where('criteria_1_id', $criteriaId2)
+                ->where('criteria_2_id', $criteriaId1);
+        })->first();
+    }
+
+    /**
      * Calculate criteria weights using Geometric Mean method
+     * ✅ FIX: Hanya hitung kriteria AKTIF
      */
     public function calculateWeights(): array
     {
@@ -84,6 +112,7 @@ class AHPService
                 'weights' => [],
                 'criterias' => collect([]),
                 'consistency_ratio' => 0,
+                'lambda_max' => 0,
                 'is_consistent' => true
             ];
         }
@@ -106,26 +135,25 @@ class AHPService
         }
 
         // Step 3: Calculate Consistency Ratio
-        $consistencyRatio = $this->calculateConsistencyRatio($matrix, $weights, $n);
+        $lambdaMax = $this->calculateLambdaMax($matrix, $weights, $n);
+        $consistencyRatio = $this->calculateConsistencyRatio($lambdaMax, $n);
 
         return [
             'weights' => $weights,
             'criterias' => $data['criterias'],
             'consistency_ratio' => $consistencyRatio,
+            'lambda_max' => $lambdaMax,
             'is_consistent' => $consistencyRatio <= 0.1
         ];
     }
 
     /**
-     * Calculate Consistency Ratio (CR)
+     * ✅ NEW: Calculate Lambda Max
      */
-    private function calculateConsistencyRatio(array $matrix, array $weights, int $n): float
+    private function calculateLambdaMax(array $matrix, array $weights, int $n): float
     {
-        if ($n <= 2) {
-            return 0; // Always consistent for n <= 2
-        }
+        if ($n <= 0) return 0;
 
-        // Calculate Lambda Max
         $lambdaMax = 0;
         for ($i = 0; $i < $n; $i++) {
             $sum = 0;
@@ -134,7 +162,19 @@ class AHPService
             }
             $lambdaMax += $sum / $weights[$i];
         }
-        $lambdaMax /= $n;
+
+        return $lambdaMax / $n;
+    }
+
+    /**
+     * Calculate Consistency Ratio (CR)
+     * ✅ UPDATED: Receive lambda max as parameter
+     */
+    private function calculateConsistencyRatio(float $lambdaMax, int $n): float
+    {
+        if ($n <= 2) {
+            return 0; // Always consistent for n <= 2
+        }
 
         // Calculate Consistency Index (CI)
         $ci = ($lambdaMax - $n) / ($n - 1);
@@ -168,18 +208,56 @@ class AHPService
 
     /**
      * Get comparison progress
+     * ✅ FIX: Hanya hitung kriteria AKTIF
      */
     public function getComparisonProgress(): array
     {
+        // ✅ HANYA KRITERIA AKTIF
         $totalCriterias = Criteria::where('is_active', true)->count();
+
+        if ($totalCriterias < 2) {
+            return [
+                'total' => 0,
+                'completed' => 0,
+                'percentage' => 0
+            ];
+        }
+
         $totalComparisons = ($totalCriterias * ($totalCriterias - 1)) / 2;
-        $completedComparisons = CriteriaComparison::count();
+
+        // ✅ Hitung perbandingan HANYA untuk kriteria AKTIF
+        $completedComparisons = CriteriaComparison::whereHas('criteria1', function ($q) {
+            $q->where('is_active', true);
+        })->whereHas('criteria2', function ($q) {
+            $q->where('is_active', true);
+        })->count();
 
         return [
-            'total' => $totalComparisons,
+            'total' => (int)$totalComparisons,
             'completed' => $completedComparisons,
             'percentage' => $totalComparisons > 0 ?
                 round(($completedComparisons / $totalComparisons) * 100, 2) : 0
         ];
+    }
+
+    /**
+     * ✅ NEW: Normalize comparison untuk konsistensi penyimpanan
+     * Selalu simpan dengan criteria ID kecil sebagai criteria_1
+     */
+    public function normalizeComparisonData($criteriaId1, $criteriaId2, $value): array
+    {
+        if ($criteriaId1 < $criteriaId2) {
+            return [
+                'criteria_1_id' => $criteriaId1,
+                'criteria_2_id' => $criteriaId2,
+                'value' => $value
+            ];
+        } else {
+            return [
+                'criteria_1_id' => $criteriaId2,
+                'criteria_2_id' => $criteriaId1,
+                'value' => 1 / $value // Kebalikan
+            ];
+        }
     }
 }

@@ -107,7 +107,7 @@ class CriteriaController extends Controller
                 'description.max' => 'Deskripsi maksimal 1000 karakter',
             ]);
 
-            // ✅ Capture old values
+            // ✅ Capture old values SEBELUM transaction
             $oldValues = [
                 'code' => $criterion->code,
                 'name' => $criterion->name,
@@ -141,7 +141,7 @@ class CriteriaController extends Controller
                 }
 
                 if (!empty($affected)) {
-                    $logDescription .= " - Status {$status} (" . implode(', ', $affected) . " terpengaruh)";
+                    $logDescription .= " - Status {$status} (" . implode(', ', $affected) . " akan dikecualikan dari perhitungan)";
                 }
             }
 
@@ -164,7 +164,7 @@ class CriteriaController extends Controller
             $message = 'Kriteria berhasil diperbarui!';
             if ($statusChanged && ($hasAssessments || $hasComparisons)) {
                 $status = $validated['is_active'] ? 'diaktifkan' : 'dinonaktifkan';
-                $message .= " Status kriteria {$status}. Data terkait akan diperbarui.";
+                $message .= " Status kriteria {$status}. Progress bar akan diperbarui otomatis.";
             }
 
             return redirect()
@@ -195,13 +195,13 @@ class CriteriaController extends Controller
             if ($criterion->comparisons1()->count() > 0 || $criterion->comparisons2()->count() > 0) {
                 return redirect()
                     ->back()
-                    ->with('warning', 'Kriteria tidak dapat dihapus karena sudah digunakan dalam perbandingan AHP. Hapus perbandingan terlebih dahulu.');
+                    ->with('warning', 'Kriteria tidak dapat dihapus karena sudah digunakan dalam perbandingan AHP. Hapus perbandingan terlebih dahulu atau nonaktifkan kriteria.');
             }
 
             if ($criterion->assessments()->count() > 0) {
                 return redirect()
                     ->back()
-                    ->with('warning', 'Kriteria tidak dapat dihapus karena sudah digunakan dalam penilaian supplier. Hapus penilaian terlebih dahulu.');
+                    ->with('warning', 'Kriteria tidak dapat dihapus karena sudah digunakan dalam penilaian supplier. Hapus penilaian terlebih dahulu atau nonaktifkan kriteria.');
             }
 
             DB::beginTransaction();
@@ -236,11 +236,13 @@ class CriteriaController extends Controller
     }
 
     /**
-     * Toggle criteria active status (OPTIONAL)
+     * Toggle criteria active status
+     * ✅ UPDATED: Informasi detail tentang impact pada progress
      */
     public function toggleActive(Criteria $criterion)
     {
         try {
+            // ✅ Get data SEBELUM transaction
             $oldStatus = $criterion->is_active;
             $newStatus = !$oldStatus;
 
@@ -264,7 +266,8 @@ class CriteriaController extends Controller
             }
 
             if (!empty($affected)) {
-                $logDescription .= ' (' . implode(', ', $affected) . ' terpengaruh)';
+                $impactNote = $newStatus ? 'akan dihitung kembali' : 'dikecualikan dari perhitungan';
+                $logDescription .= ' (' . implode(', ', $affected) . ' ' . $impactNote . ')';
             }
 
             ActivityLogHelper::logUpdate(
@@ -279,7 +282,8 @@ class CriteriaController extends Controller
 
             $message = 'Status kriteria berhasil ' . $status . '!';
             if (!empty($affected)) {
-                $message .= ' ' . implode(', ', $affected) . ' terpengaruh.';
+                $impactNote = $newStatus ? 'akan dihitung kembali dalam progress' : 'tidak akan dihitung dalam progress';
+                $message .= ' ' . implode(', ', $affected) . ' ' . $impactNote . '.';
             }
 
             return redirect()

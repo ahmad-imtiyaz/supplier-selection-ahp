@@ -7,16 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CriteriaComparison extends Model
 {
-    // Table sudah otomatis: criteria_comparisons
     protected $fillable = [
         'criteria_1_id',
         'criteria_2_id',
         'value',
-        'note', // pakai ini kalau kolom 'note' memang ada di tabel
+        'note',
     ];
 
     protected $casts = [
-        'value' => 'decimal:2',
+        'value' => 'decimal:4', // ✅ Ubah precision ke 4 untuk lebih akurat
     ];
 
     /**
@@ -44,12 +43,45 @@ class CriteriaComparison extends Model
     }
 
     /**
-     * Scope: mengambil perbandingan spesifik dua kriteria
+     * ✅ NEW: Get display value for specific criteria direction
+     * Menampilkan nilai yang benar tergantung arah perbandingan
+     */
+    public function getValueForCriteria($criteriaId1, $criteriaId2)
+    {
+        // Jika urutan sesuai dengan database
+        if ($this->criteria_1_id == $criteriaId1 && $this->criteria_2_id == $criteriaId2) {
+            return [
+                'value' => (float) $this->value,
+                'display' => number_format($this->value, 2),
+                'is_reciprocal' => false
+            ];
+        }
+        // Jika urutan terbalik (reciprocal)
+        elseif ($this->criteria_1_id == $criteriaId2 && $this->criteria_2_id == $criteriaId1) {
+            $reciprocal = 1 / $this->value;
+            return [
+                'value' => $reciprocal,
+                'display' => '1/' . number_format($this->value, 2),
+                'is_reciprocal' => true
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Scope: mengambil perbandingan spesifik dua kriteria (dari kedua arah)
+     * ✅ UPDATED: Support bidirectional search
      */
     public function scopeForCriteria($query, $criteria1Id, $criteria2Id)
     {
-        return $query->where('criteria_1_id', $criteria1Id)
-            ->where('criteria_2_id', $criteria2Id);
+        return $query->where(function ($q) use ($criteria1Id, $criteria2Id) {
+            $q->where('criteria_1_id', $criteria1Id)
+                ->where('criteria_2_id', $criteria2Id);
+        })->orWhere(function ($q) use ($criteria1Id, $criteria2Id) {
+            $q->where('criteria_1_id', $criteria2Id)
+                ->where('criteria_2_id', $criteria1Id);
+        });
     }
 
     /**
@@ -59,6 +91,18 @@ class CriteriaComparison extends Model
     {
         return $query->where('criteria_1_id', $criteriaId)
             ->orWhere('criteria_2_id', $criteriaId);
+    }
+
+    /**
+     * ✅ NEW: Scope untuk kriteria aktif saja
+     */
+    public function scopeOnlyActiveCriteria($query)
+    {
+        return $query->whereHas('criteria1', function ($q) {
+            $q->where('is_active', true);
+        })->whereHas('criteria2', function ($q) {
+            $q->where('is_active', true);
+        });
     }
 
     /**
@@ -85,5 +129,21 @@ class CriteriaComparison extends Model
         } else {
             return 'Nilai antara';
         }
+    }
+
+    /**
+     * ✅ NEW: Check if both criteria are active
+     */
+    public function bothCriteriaActive(): bool
+    {
+        return $this->criteria1->is_active && $this->criteria2->is_active;
+    }
+
+    /**
+     * ✅ NEW: Get criteria pair as string
+     */
+    public function getCriteriaPairAttribute(): string
+    {
+        return "{$this->criteria1->code} vs {$this->criteria2->code}";
     }
 }

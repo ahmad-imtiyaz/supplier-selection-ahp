@@ -21,6 +21,7 @@ class CriteriaComparisonController extends Controller
 
     public function index()
     {
+        // ✅ HANYA KRITERIA AKTIF
         $criterias = Criteria::where('is_active', true)->orderBy('code')->get();
 
         if ($criterias->count() < 2) {
@@ -33,40 +34,69 @@ class CriteriaComparisonController extends Controller
 
         $progress = $this->ahpService->getComparisonProgress();
 
-        // Build matrix untuk display
+        // ✅ Build matrix untuk display - SEMUA CELL EDITABLE (kecuali diagonal)
         $matrix = [];
         foreach ($criterias as $i => $criteria1) {
             foreach ($criterias as $j => $criteria2) {
                 if ($i === $j) {
+                    // Diagonal = 1
                     $matrix[$criteria1->id][$criteria2->id] = [
                         'value' => 1,
                         'display' => '1',
-                        'editable' => false
+                        'editable' => false,
+                        'is_diagonal' => true
                     ];
-                } elseif ($i < $j) {
-                    $comparison = CriteriaComparison::where('criteria_1_id', $criteria1->id)
-                        ->where('criteria_2_id', $criteria2->id)
-                        ->first();
+                } else {
+                    // ✅ SEMUA CELL LAIN EDITABLE
+                    $comparison = $this->findComparison($criteria1->id, $criteria2->id);
 
-                    $value = $comparison ? $comparison->value : null;
-                    $matrix[$criteria1->id][$criteria2->id] = [
-                        'value' => $value,
-                        'display' => $value ? number_format($value, 2) : '-',
-                        'editable' => true,
-                        'comparison' => $comparison
-                    ];
+                    if ($comparison) {
+                        // Ada data perbandingan
+                        if ($comparison->criteria_1_id == $criteria1->id) {
+                            // Nilai asli
+                            $value = $comparison->value;
+                            $display = number_format($value, 2);
+                        } else {
+                            // Nilai kebalikan
+                            $value = 1 / $comparison->value;
+                            $display = '1/' . number_format($comparison->value, 2);
+                        }
 
-                    // Reciprocal
-                    $matrix[$criteria2->id][$criteria1->id] = [
-                        'value' => $value ? (1 / $value) : null,
-                        'display' => $value ? '1/' . number_format($value, 2) : '-',
-                        'editable' => false
-                    ];
+                        $matrix[$criteria1->id][$criteria2->id] = [
+                            'value' => $value,
+                            'display' => $display,
+                            'editable' => true,
+                            'comparison' => $comparison,
+                            'is_reciprocal' => $comparison->criteria_2_id == $criteria1->id
+                        ];
+                    } else {
+                        // Belum ada perbandingan
+                        $matrix[$criteria1->id][$criteria2->id] = [
+                            'value' => null,
+                            'display' => '-',
+                            'editable' => true,
+                            'comparison' => null
+                        ];
+                    }
                 }
             }
         }
 
         return view('criteria-comparisons.index', compact('criterias', 'matrix', 'progress'));
+    }
+
+    /**
+     * ✅ NEW: Helper untuk find comparison (kedua arah)
+     */
+    private function findComparison($criteriaId1, $criteriaId2)
+    {
+        return CriteriaComparison::where(function ($query) use ($criteriaId1, $criteriaId2) {
+            $query->where('criteria_1_id', $criteriaId1)
+                ->where('criteria_2_id', $criteriaId2);
+        })->orWhere(function ($query) use ($criteriaId1, $criteriaId2) {
+            $query->where('criteria_1_id', $criteriaId2)
+                ->where('criteria_2_id', $criteriaId1);
+        })->first();
     }
 
     public function create(Request $request)
@@ -81,9 +111,16 @@ class CriteriaComparisonController extends Controller
                     ->with('error', 'Tidak dapat membandingkan kriteria dengan dirinya sendiri.');
             }
 
-            $comparison = CriteriaComparison::where('criteria_1_id', $criteria1->id)
-                ->where('criteria_2_id', $criteria2->id)
-                ->first();
+            // ✅ Cari comparison dari kedua arah
+            $comparison = $this->findComparison($criteria1->id, $criteria2->id);
+
+            // ✅ Jika comparison ada tapi terbalik, swap untuk display
+            if ($comparison && $comparison->criteria_1_id == $criteria2->id) {
+                // Swap agar sesuai dengan form display
+                $temp = $criteria1;
+                $criteria1 = $criteria2;
+                $criteria2 = $temp;
+            }
 
             $saaty_scale = AHPService::SAATY_SCALE;
 
@@ -115,17 +152,26 @@ class CriteriaComparisonController extends Controller
                 'note.max' => 'Catatan maksimal 500 karakter',
             ]);
 
-            // ✅ Get data SEBELUM beginTransaction
+            // ✅ Get data SEBELUM transaction
             $criteria1 = Criteria::find($request->criteria_1_id);
             $criteria2 = Criteria::find($request->criteria_2_id);
 
-            $existingComparison = CriteriaComparison::where('criteria_1_id', $request->criteria_1_id)
-                ->where('criteria_2_id', $request->criteria_2_id)
-                ->first();
+            // ✅ Normalize data (selalu simpan ID kecil sebagai criteria_1)
+            $normalizedData = $this->ahpService->normalizeComparisonData(
+                $request->criteria_1_id,
+                $request->criteria_2_id,
+                $request->value
+            );
+
+            // Cari existing comparison (dari kedua arah)
+            $existingComparison = $this->findComparison(
+                $request->criteria_1_id,
+                $request->criteria_2_id
+            );
 
             $isUpdate = $existingComparison !== null;
-
             $oldValues = null;
+
             if ($isUpdate) {
                 $oldValues = [
                     'criteria_1' => $criteria1->name . ' (' . $criteria1->code . ')',
@@ -137,13 +183,14 @@ class CriteriaComparisonController extends Controller
 
             DB::beginTransaction();
 
+            // ✅ Update or Create dengan data yang sudah dinormalisasi
             $comparison = CriteriaComparison::updateOrCreate(
                 [
-                    'criteria_1_id' => $request->criteria_1_id,
-                    'criteria_2_id' => $request->criteria_2_id,
+                    'criteria_1_id' => $normalizedData['criteria_1_id'],
+                    'criteria_2_id' => $normalizedData['criteria_2_id'],
                 ],
                 [
-                    'value' => $request->value,
+                    'value' => $normalizedData['value'],
                     'note' => $request->note,
                 ]
             );
@@ -151,7 +198,7 @@ class CriteriaComparisonController extends Controller
             $newValues = [
                 'criteria_1' => $criteria1->name . ' (' . $criteria1->code . ')',
                 'criteria_2' => $criteria2->name . ' (' . $criteria2->code . ')',
-                'value' => (float) $comparison->value,
+                'value' => (float) $request->value, // Nilai asli yang diinput user
                 'note' => $comparison->note,
             ];
 
@@ -167,7 +214,7 @@ class CriteriaComparisonController extends Controller
                 ActivityLogHelper::logCreate(
                     'CriteriaComparison',
                     $comparison->id,
-                    $criteria1->name . ' vs ' . $criteria2->name . ' = ' . $comparison->value,
+                    $criteria1->name . ' vs ' . $criteria2->name . ' = ' . $request->value,
                     $newValues
                 );
             }
@@ -218,14 +265,11 @@ class CriteriaComparisonController extends Controller
 
             // Build weights data untuk logging
             $weightsData = [];
-            foreach ($result['weights'] as $criteriaId => $weight) {
-                $criteria = Criteria::find($criteriaId);
-                if ($criteria) {
-                    $weightsData[$criteria->code] = [
-                        'name' => $criteria->name,
-                        'weight' => round($weight, 4),
-                    ];
-                }
+            foreach ($result['criterias'] as $index => $criteria) {
+                $weightsData[$criteria->code] = [
+                    'name' => $criteria->name,
+                    'weight' => round($result['weights'][$index], 4),
+                ];
             }
 
             $crStatus = $result['is_consistent'] ? 'KONSISTEN' : 'TIDAK KONSISTEN';
@@ -285,7 +329,7 @@ class CriteriaComparisonController extends Controller
     public function destroy(CriteriaComparison $criteriaComparison)
     {
         try {
-            // ✅ Get data SEBELUM beginTransaction
+            // ✅ Get data SEBELUM transaction
             $criteria1 = $criteriaComparison->criteria1;
             $criteria2 = $criteriaComparison->criteria2;
 
@@ -323,10 +367,11 @@ class CriteriaComparisonController extends Controller
     public function reset()
     {
         try {
-            // ✅ Count SEBELUM beginTransaction
+            // ✅ Count SEBELUM transaction
             $totalComparisons = CriteriaComparison::count();
             $affectedCriteria = Criteria::where('weight', '>', 0)->count();
 
+            // ✅ Validasi data kosong
             if ($totalComparisons === 0 && $affectedCriteria === 0) {
                 return redirect()->route('criteria-comparisons.index')
                     ->with('info', 'Tidak ada perbandingan atau bobot yang perlu direset.');
