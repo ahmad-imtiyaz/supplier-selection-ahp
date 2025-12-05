@@ -275,7 +275,7 @@ class SupplierAssessmentController extends Controller
     public function reset()
     {
         try {
-            // ✅ Count SEBELUM beginTransaction
+            // Hitung sebelum transaksi
             $totalAssessments = SupplierAssessment::count();
 
             if ($totalAssessments === 0) {
@@ -285,7 +285,11 @@ class SupplierAssessmentController extends Controller
 
             DB::beginTransaction();
 
-            SupplierAssessment::truncate();
+            // ❌ Jangan truncate di dalam transaction
+            // SupplierAssessment::truncate();
+
+            // ✅ Gunakan delete() agar tetap dalam transaksi
+            SupplierAssessment::query()->delete();
 
             ActivityLogHelper::logReset(
                 'SupplierAssessment',
@@ -294,9 +298,13 @@ class SupplierAssessmentController extends Controller
 
             DB::commit();
 
+            // (Opsional) Reset auto increment setelah commit
+            DB::statement('ALTER TABLE supplier_assessments AUTO_INCREMENT = 1');
+
             return redirect()->route('supplier-assessments.index')
                 ->with('success', 'Semua penilaian berhasil direset');
         } catch (\Exception $e) {
+
             if (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
@@ -306,6 +314,7 @@ class SupplierAssessmentController extends Controller
                 ->with('error', 'Terjadi kesalahan saat mereset penilaian: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Export Ranking to PDF

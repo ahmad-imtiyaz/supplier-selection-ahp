@@ -367,11 +367,10 @@ class CriteriaComparisonController extends Controller
     public function reset()
     {
         try {
-            // ✅ Count SEBELUM transaction
+            // Hitung sebelum transaksi
             $totalComparisons = CriteriaComparison::count();
             $affectedCriteria = Criteria::where('weight', '>', 0)->count();
 
-            // ✅ Validasi data kosong
             if ($totalComparisons === 0 && $affectedCriteria === 0) {
                 return redirect()->route('criteria-comparisons.index')
                     ->with('info', 'Tidak ada perbandingan atau bobot yang perlu direset.');
@@ -379,7 +378,13 @@ class CriteriaComparisonController extends Controller
 
             DB::beginTransaction();
 
-            CriteriaComparison::truncate();
+            // ❌ Jangan pakai truncate() dalam transaction
+            // CriteriaComparison::truncate();
+
+            // ✅ Pakai delete() agar tetap dalam transaction
+            CriteriaComparison::query()->delete();
+
+            // Reset bobot
             Criteria::query()->update(['weight' => 0]);
 
             ActivityLogHelper::logReset(
@@ -389,9 +394,13 @@ class CriteriaComparisonController extends Controller
 
             DB::commit();
 
+            // (opsional) reset auto increment setelah commit
+            DB::statement('ALTER TABLE criteria_comparisons AUTO_INCREMENT = 1');
+
             return redirect()->route('criteria-comparisons.index')
                 ->with('success', 'Semua perbandingan kriteria berhasil direset');
         } catch (\Exception $e) {
+
             if (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
