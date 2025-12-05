@@ -5,6 +5,8 @@ namespace App\Helpers;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ActivityLogHelper
 {
@@ -241,5 +243,15 @@ class ActivityLogHelper
             'by_model' => $byModel,
             'by_action' => $byAction,
         ];
+    }
+
+    /**
+     * Safe rollback - hanya rollback jika ada transaksi aktif
+     */
+    protected function safeRollback()
+    {
+        if (DB::transactionLevel() > 0) {
+            DB::rollBack();
+        }
     }
 }

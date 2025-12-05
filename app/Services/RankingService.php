@@ -10,76 +10,69 @@ use Illuminate\Support\Collection;
 class RankingService
 {
     /**
-     * Calculate final scores and ranking for all suppliers
+     * Calculate ranking (HANYA untuk supplier & kriteria AKTIF)
      */
-    public function calculateRanking(): array
+    public function calculateRanking()
     {
-        $suppliers = Supplier::active()->get();
-        $criterias = Criteria::active()->where('weight', '>', 0)->get();
+        // ✅ Ambil HANYA kriteria AKTIF dengan bobot > 0
+        $criterias = Criteria::where('is_active', true)
+            ->where('weight', '>', 0)
+            ->orderBy('code')
+            ->get();
 
         if ($criterias->isEmpty()) {
-            return [
-                'error' => 'Belum ada bobot kriteria. Silakan hitung bobot di menu Perbandingan AHP terlebih dahulu.',
-                'rankings' => []
-            ];
+            return ['error' => 'Tidak ada kriteria aktif dengan bobot. Silakan hitung bobot kriteria terlebih dahulu.'];
+        }
+
+        // ✅ Ambil HANYA supplier AKTIF
+        $suppliers = Supplier::where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        if ($suppliers->isEmpty()) {
+            return ['error' => 'Tidak ada supplier aktif untuk dihitung.'];
         }
 
         $rankings = [];
 
         foreach ($suppliers as $supplier) {
             $totalScore = 0;
-            $criteriaScores = [];
-            $hasAllScores = true;
+            $scores = [];
 
             foreach ($criterias as $criteria) {
+                // Get assessment
                 $assessment = SupplierAssessment::where('supplier_id', $supplier->id)
                     ->where('criteria_id', $criteria->id)
                     ->first();
 
-                if (!$assessment) {
-                    $hasAllScores = false;
-                    $criteriaScores[$criteria->id] = [
-                        'criteria' => $criteria,
-                        'raw_score' => 0,
-                        'normalized_score' => 0,
-                        'weighted_score' => 0,
-                    ];
-                    continue;
-                }
+                $score = $assessment ? $assessment->score : 0;
 
-                // Normalisasi sederhana: score / 100
-                $normalizedScore = $assessment->score / 100;
+                // Weighted score = score * weight
+                $weightedScore = $score * $criteria->weight;
+                $totalScore += $weightedScore;
 
-                // Weighted score: normalized * weight
-                $weightedScore = $normalizedScore * $criteria->weight;
-
-                $criteriaScores[$criteria->id] = [
-                    'criteria' => $criteria,
-                    'raw_score' => $assessment->score,
-                    'normalized_score' => $normalizedScore,
+                $scores[$criteria->id] = [
+                    'score' => $score,
                     'weighted_score' => $weightedScore,
                 ];
-
-                $totalScore += $weightedScore;
             }
 
             $rankings[] = [
                 'supplier' => $supplier,
                 'total_score' => $totalScore,
-                'criteria_scores' => $criteriaScores,
-                'has_all_scores' => $hasAllScores,
-                'percentage' => $totalScore * 100, // Convert to percentage
+                'scores' => $scores,
             ];
         }
 
-        // Sort by total_score descending
+        // Sort by total_score DESC
         usort($rankings, function ($a, $b) {
             return $b['total_score'] <=> $a['total_score'];
         });
 
-        // Add rank
-        foreach ($rankings as $index => &$ranking) {
-            $ranking['rank'] = $index + 1;
+        // Add ranking position
+        $rank = 1;
+        foreach ($rankings as &$ranking) {
+            $ranking['rank'] = $rank++;
         }
 
         return [
@@ -91,19 +84,37 @@ class RankingService
     /**
      * Get assessment progress
      */
-    public function getAssessmentProgress(): array
+    public function getAssessmentProgress()
     {
-        $suppliers = Supplier::active()->count();
-        $criterias = Criteria::active()->count();
-        $totalRequired = $suppliers * $criterias;
-        $completed = SupplierAssessment::count();
+        // ✅ Hitung HANYA supplier dan kriteria yang AKTIF
+        $activeSuppliers = Supplier::where('is_active', true)->count();
+        $activeCriterias = Criteria::where('is_active', true)->count();
+
+        // Validasi data kosong
+        if ($activeSuppliers === 0 || $activeCriterias === 0) {
+            return [
+                'total' => 0,
+                'completed' => 0,
+                'percentage' => 0
+            ];
+        }
+
+        $total = $activeSuppliers * $activeCriterias;
+
+        // ✅ Hitung penilaian HANYA untuk supplier & kriteria yang AKTIF
+        $completed = SupplierAssessment::whereHas('supplier', function ($q) {
+            $q->where('is_active', true);
+        })->whereHas('criteria', function ($q) {
+            $q->where('is_active', true);
+        })->count();
 
         return [
-            'total' => $totalRequired,
+            'total' => $total,
             'completed' => $completed,
-            'percentage' => $totalRequired > 0 ? ($completed / $totalRequired) * 100 : 0,
+            'percentage' => $total > 0 ? round(($completed / $total) * 100, 2) : 0
         ];
     }
+
 
     /**
      * Check if assessment is complete

@@ -46,10 +46,8 @@ class SupplierController extends Controller
             DB::beginTransaction();
 
             $validated['is_active'] = $request->has('is_active');
-
             $supplier = Supplier::create($validated);
 
-            // 🔥 LOG ACTIVITY
             ActivityLogHelper::logCreate(
                 'Supplier',
                 $supplier->id,
@@ -71,13 +69,17 @@ class SupplierController extends Controller
                 ->route('suppliers.index')
                 ->with('success', 'Supplier berhasil ditambahkan!');
         } catch (ValidationException $e) {
+            // ✅ Validation error terjadi SEBELUM beginTransaction
             return redirect()
                 ->back()
                 ->withInput()
                 ->withErrors($e->errors())
                 ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            // ✅ Safe rollback - cek dulu apakah ada transaksi
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -118,9 +120,7 @@ class SupplierController extends Controller
                 'email.email' => 'Format email tidak valid',
             ]);
 
-            DB::beginTransaction();
-
-            // 🔥 CAPTURE OLD VALUES SEBELUM UPDATE
+            // ✅ Capture old values SEBELUM beginTransaction
             $oldValues = [
                 'code' => $supplier->code,
                 'name' => $supplier->name,
@@ -133,13 +133,26 @@ class SupplierController extends Controller
 
             $validated['is_active'] = $request->has('is_active');
 
+            // ✅ CHECK jika status aktif berubah dan ada penilaian
+            $statusChanged = $oldValues['is_active'] != $validated['is_active'];
+            $hasAssessments = $supplier->assessments()->count() > 0;
+
+            DB::beginTransaction();
+
             $supplier->update($validated);
 
-            // 🔥 LOG ACTIVITY WITH OLD & NEW VALUES
+            // ✅ LOG dengan informasi tambahan jika status berubah
+            $logDescription = $supplier->name . ' (' . $supplier->code . ')';
+            if ($statusChanged && $hasAssessments) {
+                $status = $validated['is_active'] ? 'diaktifkan' : 'dinonaktifkan';
+                $assessmentCount = $supplier->assessments()->count();
+                $logDescription .= " - Status {$status} ({$assessmentCount} penilaian terpengaruh)";
+            }
+
             ActivityLogHelper::logUpdate(
                 'Supplier',
                 $supplier->id,
-                $supplier->name . ' (' . $supplier->code . ')',
+                $logDescription,
                 $oldValues,
                 [
                     'code' => $supplier->code,
@@ -154,9 +167,16 @@ class SupplierController extends Controller
 
             DB::commit();
 
+            // ✅ Pesan yang lebih informatif
+            $message = 'Supplier berhasil diperbarui!';
+            if ($statusChanged && $hasAssessments) {
+                $status = $validated['is_active'] ? 'diaktifkan' : 'dinonaktifkan';
+                $message .= " Status supplier {$status}. Progress penilaian akan diperbarui.";
+            }
+
             return redirect()
                 ->route('suppliers.index')
-                ->with('success', 'Supplier berhasil diperbarui!');
+                ->with('success', $message);
         } catch (ValidationException $e) {
             return redirect()
                 ->back()
@@ -164,7 +184,9 @@ class SupplierController extends Controller
                 ->withErrors($e->errors())
                 ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -176,7 +198,7 @@ class SupplierController extends Controller
     public function destroy(Supplier $supplier)
     {
         try {
-            // Check if supplier has assessments
+            // ✅ Check constraint SEBELUM beginTransaction
             if ($supplier->assessments()->count() > 0) {
                 return redirect()
                     ->back()
@@ -185,7 +207,6 @@ class SupplierController extends Controller
 
             DB::beginTransaction();
 
-            // 🔥 LOG ACTIVITY SEBELUM DELETE
             ActivityLogHelper::logDelete(
                 'Supplier',
                 $supplier->id,
@@ -207,11 +228,66 @@ class SupplierController extends Controller
                 ->route('suppliers.index')
                 ->with('success', 'Supplier berhasil dihapus!');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
                 ->with('error', 'Terjadi kesalahan saat menghapus supplier: ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * Toggle supplier active status (OPTIONAL - untuk quick toggle)
+     */
+    public function toggleActive(Supplier $supplier)
+    {
+        try {
+            $oldStatus = $supplier->is_active;
+            $newStatus = !$oldStatus;
+            $hasAssessments = $supplier->assessments()->count() > 0;
+
+            DB::beginTransaction();
+
+            $supplier->update(['is_active' => $newStatus]);
+
+            // Log dengan informasi assessment
+            $status = $newStatus ? 'diaktifkan' : 'dinonaktifkan';
+            $logDescription = $supplier->name . ' (' . $supplier->code . ') - Status ' . $status;
+
+            if ($hasAssessments) {
+                $assessmentCount = $supplier->assessments()->count();
+                $logDescription .= " ({$assessmentCount} penilaian terpengaruh)";
+            }
+
+            ActivityLogHelper::logUpdate(
+                'Supplier',
+                $supplier->id,
+                $logDescription,
+                ['is_active' => $oldStatus],
+                ['is_active' => $newStatus]
+            );
+
+            DB::commit();
+
+            $message = 'Status supplier berhasil ' . $status . '!';
+            if ($hasAssessments) {
+                $message .= ' Progress penilaian akan diperbarui.';
+            }
+
+            return redirect()
+                ->back()
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

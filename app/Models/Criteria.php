@@ -56,8 +56,6 @@ class Criteria extends Model
 
     /**
      * Get all comparisons yang melibatkan kriteria ini
-     * 
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function allComparisons()
     {
@@ -66,14 +64,11 @@ class Criteria extends Model
     }
 
     /**
-     * Check if criteria has any comparisons
-     * 
-     * @return bool
+     * Check jika kriteria memiliki perbandingan
      */
     public function hasComparisons(): bool
     {
-        return $this->comparisonsAsCriteria1()->exists()
-            || $this->comparisonsAsCriteria2()->exists();
+        return $this->comparisons1()->exists() || $this->comparisons2()->exists();
     }
 
     /**
@@ -85,13 +80,22 @@ class Criteria extends Model
     }
 
     /**
-     * Check if criteria has any assessments
-     * 
-     * @return bool
+     * Check jika kriteria memiliki penilaian
      */
     public function hasAssessments(): bool
     {
         return $this->assessments()->exists();
+    }
+
+    /**
+     * Get total impact count
+     */
+    public function impactCount(): array
+    {
+        return [
+            'assessments' => $this->assessments()->count(),
+            'comparisons' => $this->comparisons1()->count() + $this->comparisons2()->count(),
+        ];
     }
 
     /**
@@ -104,8 +108,6 @@ class Criteria extends Model
 
     /**
      * Check if criteria can be deleted
-     * 
-     * @return array ['can_delete' => bool, 'reason' => string|null]
      */
     public function canBeDeleted(): array
     {

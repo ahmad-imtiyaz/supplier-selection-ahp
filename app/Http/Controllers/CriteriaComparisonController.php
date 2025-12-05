@@ -115,20 +115,16 @@ class CriteriaComparisonController extends Controller
                 'note.max' => 'Catatan maksimal 500 karakter',
             ]);
 
-            DB::beginTransaction();
-
-            // Get criteria names untuk logging
+            // ✅ Get data SEBELUM beginTransaction
             $criteria1 = Criteria::find($request->criteria_1_id);
             $criteria2 = Criteria::find($request->criteria_2_id);
 
-            // 🔥 CHECK IF UPDATE OR CREATE
             $existingComparison = CriteriaComparison::where('criteria_1_id', $request->criteria_1_id)
                 ->where('criteria_2_id', $request->criteria_2_id)
                 ->first();
 
             $isUpdate = $existingComparison !== null;
 
-            // Capture old values jika update
             $oldValues = null;
             if ($isUpdate) {
                 $oldValues = [
@@ -139,7 +135,8 @@ class CriteriaComparisonController extends Controller
                 ];
             }
 
-            // Store/Update comparison
+            DB::beginTransaction();
+
             $comparison = CriteriaComparison::updateOrCreate(
                 [
                     'criteria_1_id' => $request->criteria_1_id,
@@ -151,7 +148,6 @@ class CriteriaComparisonController extends Controller
                 ]
             );
 
-            // New values untuk logging
             $newValues = [
                 'criteria_1' => $criteria1->name . ' (' . $criteria1->code . ')',
                 'criteria_2' => $criteria2->name . ' (' . $criteria2->code . ')',
@@ -159,7 +155,6 @@ class CriteriaComparisonController extends Controller
                 'note' => $comparison->note,
             ];
 
-            // 🔥 LOG ACTIVITY
             if ($isUpdate) {
                 ActivityLogHelper::logUpdate(
                     'CriteriaComparison',
@@ -188,7 +183,9 @@ class CriteriaComparisonController extends Controller
                 ->withErrors($e->errors())
                 ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -217,10 +214,9 @@ class CriteriaComparisonController extends Controller
 
             DB::beginTransaction();
 
-            // Save weights
             $this->ahpService->saveWeights();
 
-            // 🔥 LOG CALCULATE ACTIVITY
+            // Build weights data untuk logging
             $weightsData = [];
             foreach ($result['weights'] as $criteriaId => $weight) {
                 $criteria = Criteria::find($criteriaId);
@@ -255,7 +251,9 @@ class CriteriaComparisonController extends Controller
             return redirect()->route('criteria-comparisons.result')
                 ->with('success', 'Bobot kriteria berhasil dihitung dan KONSISTEN (CR = ' . number_format($result['consistency_ratio'], 4) . ')');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -287,13 +285,12 @@ class CriteriaComparisonController extends Controller
     public function destroy(CriteriaComparison $criteriaComparison)
     {
         try {
-            DB::beginTransaction();
-
-            // Get criteria names untuk logging
+            // ✅ Get data SEBELUM beginTransaction
             $criteria1 = $criteriaComparison->criteria1;
             $criteria2 = $criteriaComparison->criteria2;
 
-            // 🔥 LOG ACTIVITY SEBELUM DELETE
+            DB::beginTransaction();
+
             ActivityLogHelper::logDelete(
                 'CriteriaComparison',
                 $criteriaComparison->id,
@@ -313,7 +310,9 @@ class CriteriaComparisonController extends Controller
             return redirect()->route('criteria-comparisons.index')
                 ->with('success', 'Perbandingan kriteria berhasil dihapus');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -324,16 +323,20 @@ class CriteriaComparisonController extends Controller
     public function reset()
     {
         try {
-            DB::beginTransaction();
-
-            // 🔥 COUNT DATA SEBELUM RESET
+            // ✅ Count SEBELUM beginTransaction
             $totalComparisons = CriteriaComparison::count();
             $affectedCriteria = Criteria::where('weight', '>', 0)->count();
+
+            if ($totalComparisons === 0 && $affectedCriteria === 0) {
+                return redirect()->route('criteria-comparisons.index')
+                    ->with('info', 'Tidak ada perbandingan atau bobot yang perlu direset.');
+            }
+
+            DB::beginTransaction();
 
             CriteriaComparison::truncate();
             Criteria::query()->update(['weight' => 0]);
 
-            // 🔥 LOG RESET ACTIVITY
             ActivityLogHelper::logReset(
                 'CriteriaComparison',
                 "Mereset semua perbandingan kriteria - {$totalComparisons} perbandingan dan {$affectedCriteria} bobot kriteria dihapus"
@@ -344,7 +347,9 @@ class CriteriaComparisonController extends Controller
             return redirect()->route('criteria-comparisons.index')
                 ->with('success', 'Semua perbandingan kriteria berhasil direset');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()

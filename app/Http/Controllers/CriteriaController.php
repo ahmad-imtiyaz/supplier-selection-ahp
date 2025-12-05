@@ -45,7 +45,6 @@ class CriteriaController extends Controller
 
             $criteria = Criteria::create($validated);
 
-            // 🔥 LOG ACTIVITY
             ActivityLogHelper::logCreate(
                 'Criteria',
                 $criteria->id,
@@ -70,7 +69,9 @@ class CriteriaController extends Controller
                 ->withErrors($e->errors())
                 ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -106,9 +107,7 @@ class CriteriaController extends Controller
                 'description.max' => 'Deskripsi maksimal 1000 karakter',
             ]);
 
-            DB::beginTransaction();
-
-            // 🔥 CAPTURE OLD VALUES
+            // ✅ Capture old values
             $oldValues = [
                 'code' => $criterion->code,
                 'name' => $criterion->name,
@@ -118,13 +117,38 @@ class CriteriaController extends Controller
 
             $validated['is_active'] = $request->has('is_active');
 
+            // ✅ CHECK jika status aktif berubah
+            $statusChanged = $oldValues['is_active'] != $validated['is_active'];
+            $hasAssessments = $criterion->assessments()->count() > 0;
+            $hasComparisons = $criterion->comparisons1()->count() > 0 || $criterion->comparisons2()->count() > 0;
+
+            DB::beginTransaction();
+
             $criterion->update($validated);
 
-            // 🔥 LOG ACTIVITY
+            // ✅ LOG dengan informasi tambahan
+            $logDescription = $criterion->name . ' (' . $criterion->code . ')';
+            if ($statusChanged) {
+                $status = $validated['is_active'] ? 'diaktifkan' : 'dinonaktifkan';
+                $affected = [];
+
+                if ($hasAssessments) {
+                    $affected[] = $criterion->assessments()->count() . ' penilaian';
+                }
+                if ($hasComparisons) {
+                    $totalComparisons = $criterion->comparisons1()->count() + $criterion->comparisons2()->count();
+                    $affected[] = $totalComparisons . ' perbandingan';
+                }
+
+                if (!empty($affected)) {
+                    $logDescription .= " - Status {$status} (" . implode(', ', $affected) . " terpengaruh)";
+                }
+            }
+
             ActivityLogHelper::logUpdate(
                 'Criteria',
                 $criterion->id,
-                $criterion->name . ' (' . $criterion->code . ')',
+                $logDescription,
                 $oldValues,
                 [
                     'code' => $criterion->code,
@@ -136,9 +160,16 @@ class CriteriaController extends Controller
 
             DB::commit();
 
+            // ✅ Pesan informatif
+            $message = 'Kriteria berhasil diperbarui!';
+            if ($statusChanged && ($hasAssessments || $hasComparisons)) {
+                $status = $validated['is_active'] ? 'diaktifkan' : 'dinonaktifkan';
+                $message .= " Status kriteria {$status}. Data terkait akan diperbarui.";
+            }
+
             return redirect()
                 ->route('criteria.index')
-                ->with('success', 'Kriteria berhasil diperbarui!');
+                ->with('success', $message);
         } catch (ValidationException $e) {
             return redirect()
                 ->back()
@@ -146,7 +177,9 @@ class CriteriaController extends Controller
                 ->withErrors($e->errors())
                 ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -158,14 +191,13 @@ class CriteriaController extends Controller
     public function destroy(Criteria $criterion)
     {
         try {
-            // Check if criteria has comparisons
+            // ✅ Check constraint SEBELUM beginTransaction
             if ($criterion->comparisons1()->count() > 0 || $criterion->comparisons2()->count() > 0) {
                 return redirect()
                     ->back()
                     ->with('warning', 'Kriteria tidak dapat dihapus karena sudah digunakan dalam perbandingan AHP. Hapus perbandingan terlebih dahulu.');
             }
 
-            // Check if criteria has assessments
             if ($criterion->assessments()->count() > 0) {
                 return redirect()
                     ->back()
@@ -174,7 +206,6 @@ class CriteriaController extends Controller
 
             DB::beginTransaction();
 
-            // 🔥 LOG ACTIVITY SEBELUM DELETE
             ActivityLogHelper::logDelete(
                 'Criteria',
                 $criterion->id,
@@ -194,11 +225,74 @@ class CriteriaController extends Controller
                 ->route('criteria.index')
                 ->with('success', 'Kriteria berhasil dihapus!');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
                 ->with('error', 'Terjadi kesalahan saat menghapus kriteria: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Toggle criteria active status (OPTIONAL)
+     */
+    public function toggleActive(Criteria $criterion)
+    {
+        try {
+            $oldStatus = $criterion->is_active;
+            $newStatus = !$oldStatus;
+
+            $hasAssessments = $criterion->assessments()->count() > 0;
+            $hasComparisons = $criterion->comparisons1()->count() > 0 || $criterion->comparisons2()->count() > 0;
+
+            DB::beginTransaction();
+
+            $criterion->update(['is_active' => $newStatus]);
+
+            $status = $newStatus ? 'diaktifkan' : 'dinonaktifkan';
+            $logDescription = $criterion->name . ' (' . $criterion->code . ') - Status ' . $status;
+
+            $affected = [];
+            if ($hasAssessments) {
+                $affected[] = $criterion->assessments()->count() . ' penilaian';
+            }
+            if ($hasComparisons) {
+                $totalComparisons = $criterion->comparisons1()->count() + $criterion->comparisons2()->count();
+                $affected[] = $totalComparisons . ' perbandingan';
+            }
+
+            if (!empty($affected)) {
+                $logDescription .= ' (' . implode(', ', $affected) . ' terpengaruh)';
+            }
+
+            ActivityLogHelper::logUpdate(
+                'Criteria',
+                $criterion->id,
+                $logDescription,
+                ['is_active' => $oldStatus],
+                ['is_active' => $newStatus]
+            );
+
+            DB::commit();
+
+            $message = 'Status kriteria berhasil ' . $status . '!';
+            if (!empty($affected)) {
+                $message .= ' ' . implode(', ', $affected) . ' terpengaruh.';
+            }
+
+            return redirect()
+                ->back()
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

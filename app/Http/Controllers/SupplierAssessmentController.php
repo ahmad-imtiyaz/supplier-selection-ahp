@@ -112,20 +112,16 @@ class SupplierAssessmentController extends Controller
                 'notes.max' => 'Catatan maksimal 500 karakter',
             ]);
 
-            DB::beginTransaction();
-
-            // Get supplier & criteria untuk logging
+            // ✅ Get data SEBELUM beginTransaction
             $supplier = Supplier::find($request->supplier_id);
             $criteria = Criteria::find($request->criteria_id);
 
-            // 🔥 CHECK IF UPDATE OR CREATE
             $existingAssessment = SupplierAssessment::where('supplier_id', $request->supplier_id)
                 ->where('criteria_id', $request->criteria_id)
                 ->first();
 
             $isUpdate = $existingAssessment !== null;
 
-            // Capture old values jika update
             $oldValues = null;
             if ($isUpdate) {
                 $oldValues = [
@@ -136,7 +132,8 @@ class SupplierAssessmentController extends Controller
                 ];
             }
 
-            // Store/Update assessment
+            DB::beginTransaction();
+
             $assessment = SupplierAssessment::updateOrCreate(
                 [
                     'supplier_id' => $request->supplier_id,
@@ -148,7 +145,6 @@ class SupplierAssessmentController extends Controller
                 ]
             );
 
-            // New values untuk logging
             $newValues = [
                 'supplier' => $supplier->name . ' (' . $supplier->code . ')',
                 'criteria' => $criteria->name . ' (' . $criteria->code . ')',
@@ -156,7 +152,6 @@ class SupplierAssessmentController extends Controller
                 'notes' => $assessment->notes,
             ];
 
-            // 🔥 LOG ACTIVITY
             if ($isUpdate) {
                 ActivityLogHelper::logUpdate(
                     'SupplierAssessment',
@@ -185,7 +180,9 @@ class SupplierAssessmentController extends Controller
                 ->withErrors($e->errors())
                 ->with('error', 'Validasi gagal! Periksa kembali form Anda.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -237,13 +234,12 @@ class SupplierAssessmentController extends Controller
     public function destroy(SupplierAssessment $supplierAssessment)
     {
         try {
-            DB::beginTransaction();
-
-            // Get supplier & criteria untuk logging
+            // ✅ Get data SEBELUM beginTransaction
             $supplier = $supplierAssessment->supplier;
             $criteria = $supplierAssessment->criteria;
 
-            // 🔥 LOG ACTIVITY SEBELUM DELETE
+            DB::beginTransaction();
+
             ActivityLogHelper::logDelete(
                 'SupplierAssessment',
                 $supplierAssessment->id,
@@ -263,7 +259,9 @@ class SupplierAssessmentController extends Controller
             return redirect()->route('supplier-assessments.index')
                 ->with('success', 'Penilaian berhasil dihapus');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()
@@ -277,14 +275,18 @@ class SupplierAssessmentController extends Controller
     public function reset()
     {
         try {
-            DB::beginTransaction();
-
-            // 🔥 COUNT DATA SEBELUM RESET
+            // ✅ Count SEBELUM beginTransaction
             $totalAssessments = SupplierAssessment::count();
+
+            if ($totalAssessments === 0) {
+                return redirect()->route('supplier-assessments.index')
+                    ->with('info', 'Tidak ada penilaian yang perlu direset.');
+            }
+
+            DB::beginTransaction();
 
             SupplierAssessment::truncate();
 
-            // 🔥 LOG RESET ACTIVITY
             ActivityLogHelper::logReset(
                 'SupplierAssessment',
                 "Mereset semua penilaian supplier - {$totalAssessments} penilaian dihapus"
@@ -295,7 +297,9 @@ class SupplierAssessmentController extends Controller
             return redirect()->route('supplier-assessments.index')
                 ->with('success', 'Semua penilaian berhasil direset');
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return redirect()
                 ->back()

@@ -62,6 +62,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/{user}/demote', [UserManagementController::class, 'demoteToUser'])->name('demote');
         Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
     });
+
+    Route::middleware(['auth'])->group(function () {
+        // Toggle active status (OPTIONAL)
+        Route::patch('suppliers/{supplier}/toggle-active', [SupplierController::class, 'toggleActive'])
+            ->name('suppliers.toggle-active');
+
+        Route::patch('criteria/{criterion}/toggle-active', [CriteriaController::class, 'toggleActive'])
+            ->name('criteria.toggle-active');
+    });
 });
 
 require __DIR__ . '/auth.php';
