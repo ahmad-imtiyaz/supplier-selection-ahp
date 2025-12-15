@@ -15,7 +15,7 @@ class CriteriaComparison extends Model
     ];
 
     protected $casts = [
-        'value' => 'decimal:4', // ✅ Ubah precision ke 4 untuk lebih akurat
+        'value' => 'decimal:4',
     ];
 
     /**
@@ -39,29 +39,30 @@ class CriteriaComparison extends Model
      */
     public function getReciprocalValueAttribute(): float
     {
-        return $this->value > 0 ? (1 / $this->value) : 0;
+        return $this->value > 0 ? (1 / (float) $this->value) : 0;
     }
 
     /**
-     * ✅ NEW: Get display value for specific criteria direction
-     * Menampilkan nilai yang benar tergantung arah perbandingan
+     * ✅ FIXED: Get display value for specific criteria direction
      */
     public function getValueForCriteria($criteriaId1, $criteriaId2)
     {
+        $value = (float) $this->value;
+
         // Jika urutan sesuai dengan database
         if ($this->criteria_1_id == $criteriaId1 && $this->criteria_2_id == $criteriaId2) {
             return [
-                'value' => (float) $this->value,
-                'display' => number_format($this->value, 2),
+                'value' => $value,
+                'display' => number_format($value, 2),
                 'is_reciprocal' => false
             ];
         }
         // Jika urutan terbalik (reciprocal)
         elseif ($this->criteria_1_id == $criteriaId2 && $this->criteria_2_id == $criteriaId1) {
-            $reciprocal = 1 / $this->value;
+            $reciprocal = 1 / $value;
             return [
                 'value' => $reciprocal,
-                'display' => '1/' . number_format($this->value, 2),
+                'display' => '1/' . number_format($value, 2),
                 'is_reciprocal' => true
             ];
         }
@@ -71,7 +72,6 @@ class CriteriaComparison extends Model
 
     /**
      * Scope: mengambil perbandingan spesifik dua kriteria (dari kedua arah)
-     * ✅ UPDATED: Support bidirectional search
      */
     public function scopeForCriteria($query, $criteria1Id, $criteria2Id)
     {
@@ -94,7 +94,7 @@ class CriteriaComparison extends Model
     }
 
     /**
-     * ✅ NEW: Scope untuk kriteria aktif saja
+     * ✅ Scope untuk kriteria aktif saja
      */
     public function scopeOnlyActiveCriteria($query)
     {
@@ -110,7 +110,8 @@ class CriteriaComparison extends Model
      */
     public function isValid(): bool
     {
-        return $this->value >= 0.111 && $this->value <= 9;
+        $value = (float) $this->value;
+        return $value >= 0.111 && $value <= 9;
     }
 
     /**
@@ -118,13 +119,15 @@ class CriteriaComparison extends Model
      */
     public function getDescriptionAttribute(): string
     {
-        if ($this->value == 1) {
+        $value = (float) $this->value;
+
+        if ($value == 1) {
             return 'Sama penting';
-        } elseif ($this->value >= 7) {
+        } elseif ($value >= 7) {
             return 'Sangat lebih penting';
-        } elseif ($this->value >= 5) {
+        } elseif ($value >= 5) {
             return 'Jelas lebih penting';
-        } elseif ($this->value >= 3) {
+        } elseif ($value >= 3) {
             return 'Sedikit lebih penting';
         } else {
             return 'Nilai antara';
@@ -132,7 +135,7 @@ class CriteriaComparison extends Model
     }
 
     /**
-     * ✅ NEW: Check if both criteria are active
+     * ✅ Check if both criteria are active
      */
     public function bothCriteriaActive(): bool
     {
@@ -140,7 +143,7 @@ class CriteriaComparison extends Model
     }
 
     /**
-     * ✅ NEW: Get criteria pair as string
+     * ✅ Get criteria pair as string
      */
     public function getCriteriaPairAttribute(): string
     {

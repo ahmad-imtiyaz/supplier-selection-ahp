@@ -246,17 +246,18 @@ class AHPService
      */
     public function normalizeComparisonData($criteriaId1, $criteriaId2, $value): array
     {
+        // ✅ Tambah cast (float) untuk hasil pembagian
         if ($criteriaId1 < $criteriaId2) {
             return [
                 'criteria_1_id' => $criteriaId1,
                 'criteria_2_id' => $criteriaId2,
-                'value' => $value
+                'value' => (float) $value  // ✅ Cast ke float
             ];
         } else {
             return [
                 'criteria_1_id' => $criteriaId2,
                 'criteria_2_id' => $criteriaId1,
-                'value' => 1 / $value // Kebalikan
+                'value' => (float) (1 / $value)  // ✅ Cast hasil pembagian
             ];
         }
     }

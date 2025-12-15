@@ -34,10 +34,12 @@ class RankingService
         }
 
         $rankings = [];
+        $maxScore = 0; // Untuk normalisasi ke percentage
 
         foreach ($suppliers as $supplier) {
             $totalScore = 0;
-            $scores = [];
+            $criteriaScores = [];
+            $hasAllScores = true;
 
             foreach ($criterias as $criteria) {
                 // Get assessment
@@ -45,22 +47,36 @@ class RankingService
                     ->where('criteria_id', $criteria->id)
                     ->first();
 
-                $score = $assessment ? $assessment->score : 0;
+                if (!$assessment) {
+                    $hasAllScores = false;
+                }
 
-                // Weighted score = score * weight
-                $weightedScore = $score * $criteria->weight;
+                $rawScore = $assessment ? $assessment->score : 0;
+
+                // Normalized score (raw score dibagi 100 untuk normalisasi ke 0-1)
+                $normalizedScore = $rawScore / 100;
+
+                // Weighted score = normalized_score * weight
+                $weightedScore = $normalizedScore * $criteria->weight;
                 $totalScore += $weightedScore;
 
-                $scores[$criteria->id] = [
-                    'score' => $score,
+                $criteriaScores[$criteria->id] = [
+                    'raw_score' => $rawScore,
+                    'normalized_score' => $normalizedScore,
                     'weighted_score' => $weightedScore,
                 ];
+            }
+
+            // Track max score untuk normalisasi
+            if ($totalScore > $maxScore) {
+                $maxScore = $totalScore;
             }
 
             $rankings[] = [
                 'supplier' => $supplier,
                 'total_score' => $totalScore,
-                'scores' => $scores,
+                'criteria_scores' => $criteriaScores,
+                'has_all_scores' => $hasAllScores,
             ];
         }
 
@@ -69,10 +85,17 @@ class RankingService
             return $b['total_score'] <=> $a['total_score'];
         });
 
-        // Add ranking position
+        // Add ranking position and percentage
         $rank = 1;
         foreach ($rankings as &$ranking) {
             $ranking['rank'] = $rank++;
+
+            // ✅ Calculate percentage (normalisasi ke 100%)
+            if ($maxScore > 0) {
+                $ranking['percentage'] = ($ranking['total_score'] / $maxScore) * 100;
+            } else {
+                $ranking['percentage'] = 0;
+            }
         }
 
         return [

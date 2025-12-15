@@ -51,15 +51,27 @@ class CriteriaComparisonController extends Controller
                     $comparison = $this->findComparison($criteria1->id, $criteria2->id);
 
                     if ($comparison) {
-                        // Ada data perbandingan
-                        if ($comparison->criteria_1_id == $criteria1->id) {
-                            // Nilai asli
-                            $value = $comparison->value;
+                        // ✅ FIX: Logika display yang BENAR
+                        // Database menyimpan dengan normalisasi: ID kecil selalu jadi criteria_1_id
+                        // Contoh: Input C1 vs C2 = 4 → DB: (criteria_1_id=1, criteria_2_id=2, value=4)
+                        // Contoh: Input C2 vs C1 = 4 → DB: (criteria_1_id=1, criteria_2_id=2, value=0.25)
+
+                        // Cek: Apakah cell ini sesuai arah penyimpanan di DB?
+                        $isDatabaseDirection = (
+                            $comparison->criteria_1_id == $criteria1->id &&
+                            $comparison->criteria_2_id == $criteria2->id
+                        );
+
+                        if ($isDatabaseDirection) {
+                            // ✅ Arah SAMA dengan database → tampilkan nilai asli
+                            $value = (float) $comparison->value;
                             $display = number_format($value, 2);
+                            $isReciprocal = false;
                         } else {
-                            // Nilai kebalikan
-                            $value = 1 / $comparison->value;
-                            $display = '1/' . number_format($comparison->value, 2);
+                            // ✅ Arah KEBALIKAN → tampilkan reciprocal
+                            $value = 1 / (float) $comparison->value;
+                            $display = '1/' . number_format((float) $comparison->value, 2);
+                            $isReciprocal = true;
                         }
 
                         $matrix[$criteria1->id][$criteria2->id] = [
@@ -67,7 +79,7 @@ class CriteriaComparisonController extends Controller
                             'display' => $display,
                             'editable' => true,
                             'comparison' => $comparison,
-                            'is_reciprocal' => $comparison->criteria_2_id == $criteria1->id
+                            'is_reciprocal' => $isReciprocal
                         ];
                     } else {
                         // Belum ada perbandingan
@@ -86,7 +98,7 @@ class CriteriaComparisonController extends Controller
     }
 
     /**
-     * ✅ NEW: Helper untuk find comparison (kedua arah)
+     * ✅ Helper untuk find comparison (kedua arah)
      */
     private function findComparison($criteriaId1, $criteriaId2)
     {
@@ -156,12 +168,13 @@ class CriteriaComparisonController extends Controller
             $criteria1 = Criteria::find($request->criteria_1_id);
             $criteria2 = Criteria::find($request->criteria_2_id);
 
-            // ✅ Normalize data (selalu simpan ID kecil sebagai criteria_1)
-            $normalizedData = $this->ahpService->normalizeComparisonData(
-                $request->criteria_1_id,
-                $request->criteria_2_id,
-                $request->value
-            );
+            // ✅ PENTING: Simpan PERSIS seperti input user (TANPA normalisasi otomatis)
+            // Normalisasi hanya untuk mencari, bukan untuk menyimpan
+            $normalizedData = [
+                'criteria_1_id' => $request->criteria_1_id,
+                'criteria_2_id' => $request->criteria_2_id,
+                'value' => (float) $request->value
+            ];
 
             // Cari existing comparison (dari kedua arah)
             $existingComparison = $this->findComparison(
@@ -183,17 +196,27 @@ class CriteriaComparisonController extends Controller
 
             DB::beginTransaction();
 
-            // ✅ Update or Create dengan data yang sudah dinormalisasi
-            $comparison = CriteriaComparison::updateOrCreate(
-                [
-                    'criteria_1_id' => $normalizedData['criteria_1_id'],
-                    'criteria_2_id' => $normalizedData['criteria_2_id'],
-                ],
-                [
-                    'value' => $normalizedData['value'],
+            // ✅ Update or Create LANGSUNG tanpa normalisasi
+            // Jika sudah ada comparison dari arah manapun, update yang existing
+            // Jika belum ada, buat baru dengan arah yang user input
+            if ($existingComparison) {
+                // Update existing (bisa dari arah manapun)
+                $existingComparison->update([
+                    'criteria_1_id' => $request->criteria_1_id,
+                    'criteria_2_id' => $request->criteria_2_id,
+                    'value' => (float) $request->value,
                     'note' => $request->note,
-                ]
-            );
+                ]);
+                $comparison = $existingComparison;
+            } else {
+                // Buat baru
+                $comparison = CriteriaComparison::create([
+                    'criteria_1_id' => $request->criteria_1_id,
+                    'criteria_2_id' => $request->criteria_2_id,
+                    'value' => (float) $request->value,
+                    'note' => $request->note,
+                ]);
+            }
 
             $newValues = [
                 'criteria_1' => $criteria1->name . ' (' . $criteria1->code . ')',
@@ -377,9 +400,6 @@ class CriteriaComparisonController extends Controller
             }
 
             DB::beginTransaction();
-
-            // ❌ Jangan pakai truncate() dalam transaction
-            // CriteriaComparison::truncate();
 
             // ✅ Pakai delete() agar tetap dalam transaction
             CriteriaComparison::query()->delete();
