@@ -1,7 +1,3 @@
-Berikut **README profesional** untuk project GitHub kamu yang berjudul **Supplier Selection AHP** (UAS SPK & SE) — dibuat untuk penggunaan profesional (tanpa emoji tidak relevan, struktur jelas, deskripsi teknis):
-
----
-
 # **Supplier Selection Using AHP**
 
 ## **Project Overview**
