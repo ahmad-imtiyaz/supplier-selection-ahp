@@ -1,59 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Berikut **README profesional** untuk project GitHub kamu yang berjudul **Supplier Selection AHP** (UAS SPK & SE) — dibuat untuk penggunaan profesional (tanpa emoji tidak relevan, struktur jelas, deskripsi teknis):
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+# **Supplier Selection Using AHP**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## **Project Overview**
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Repository ini berisi implementasi sistem pendukung keputusan (SPK) untuk **pemilihan supplier** berbasis **Analytic Hierarchy Process (AHP)**. AHP adalah metode *Multi-Criteria Decision Making* (MCDM) yang umum digunakan untuk mengevaluasi dan membandingkan alternatif berdasarkan beberapa kriteria yang saling bertentangan. Metode ini memungkinkan pengguna untuk memberikan bobot prioritas pada tiap kriteria, menggabungkan penilaian subjektif dan objektif, lalu menghitung peringkat akhir supplier terbaik berdasarkan bobot tersebut. ([VGTU Journals][1])
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Project ini dibuat sebagai tugas akhir mata kuliah **Sistem Pendukung Keputusan (SPK) & Sistem Enterprise (SE)** dan bertujuan memberikan solusi terstruktur dalam proses evaluasi supplier dengan pendekatan AHP.
 
-## Learning Laravel
+## **Features**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Fitur utama yang tersedia:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+* Form input data supplier dan kriteria evaluasi
+* Perhitungan AHP untuk menentukan bobot kriteria
+* Perbandingan berpasangan (pairwise comparison)
+* Normalisasi dan perankingan supplier
+* Tampilan hasil perhitungan dan hasil rekomendasi supplier
 
-## Laravel Sponsors
+## **Tech Stack**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Project ini dibangun menggunakan komponen teknologi berikut:
 
-### Premium Partners
+* **PHP** — Bahasa utama aplikasi backend
+* **Laravel Framework** — Struktur aplikasi dan routing
+* **Blade Templating Engine** — Untuk rendering antarmuka
+* **Bootstrap** — UI framework responsif
+* **MySQL** — Database untuk penyimpanan data supplier dan kriteria
+* **JavaScript** — Interaktivitas frontend
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## **Installation & Setup**
 
-## Contributing
+1. **Clone repository:**
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+   ```bash
+   git clone https://github.com/ahmad-imtiyaz/supplier-selection-ahp.git
+   ```
 
-## Code of Conduct
+2. **Masuk ke direktori project:**
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+   ```bash
+   cd supplier-selection-ahp
+   ```
 
-## Security Vulnerabilities
+3. **Install dependensi PHP:**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+   ```bash
+   composer install
+   ```
 
-## License
+4. **Salin file environment dan konfigurasi:**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+   ```bash
+   cp .env.example .env
+   ```
+
+   Sesuaikan konfigurasi database pada `.env`.
+
+5. **Generate application key:**
+
+   ```bash
+   php artisan key:generate
+   ```
+
+6. **Migrasi database:**
+
+   ```bash
+   php artisan migrate
+   ```
+
+7. **Jalankan server development:**
+
+   ```bash
+   php artisan serve
+   ```
+
+   Akses aplikasi di `http://localhost:8000`.
+
+> Pastikan anda sudah menginstal **PHP**, **Composer**, dan **MySQL** dengan versi sesuai kebutuhan Laravel.
+
+## **Usage**
+
+Setelah server berjalan, Anda dapat:
+
+* Menambahkan data *criteria* dan *supplier* ke dalam sistem.
+* Menginput penilaian untuk setiap supplier berdasarkan kriteria.
+* Melakukan perbandingan berpasangan antar kriteria.
+* Melihat hasil perhitungan AHP dan rekomendasi supplier terbaik.
+
+*Contoh alur penggunaan:*
+
+1. Buka menu kriteria → tambah kriteria evaluasi (misalnya: harga, kualitas, pengiriman).
+2. Buka halaman supplier → tambah daftar supplier.
+3. Lakukan *pairwise comparison* untuk menentukan bobot prioritas.
+4. Sistem secara otomatis menghitung dan menampilkan pilihan supplier terbaik.
+
+## **Folder Structure**
+
+Struktur direktori utama project:
+
+```
+app/                  # Logika backend utama (Controllers, Models)
+bootstrap/            # Bootstrap framework untuk Laravel
+config/               # Konfigurasi aplikasi
+database/             # Migrations dan seeders
+public/               # Aset publik (CSS/JS), entry point web
+resources/            # Views, Blade templates, assets
+routes/               # Definisi semua route aplikasi
+tests/                # Unit / Feature tests
+.env.example          # Template file environment
+composer.json         # Daftar dependensi PHP
+```
+
+## **Contributing**
+
+Kontribusi diperbolehkan melalui mekanisme GitHub:
+
+1. Fork repository ini.
+2. Buat branch baru sesuai fitur/perbaikan.
+3. Buat commit dengan pesan yang jelas.
+4. Ajukan pull request untuk direview.
+
+## **Author**
+
+**Ahmad Imtiyaz Najih**
+Web Developer & SPK Enthusiast
+GitHub: [https://github.com/ahmad-imtiyaz](https://github.com/ahmad-imtiyaz)
+Email: **imtiyaznajih8@gmail.com**
+
+---
+
+[1]: https://journals.vilniustech.lt/index.php/Transport/article/view/1897?utm_source=chatgpt.com "The use of AHP method for selection of supplier | Transport"
