@@ -8,11 +8,58 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Supplier extends Model
 {
     /**
+     * Mass assignment
+     */
+    protected $fillable = [
+        'code',
+        'name',
+        'address',
+        'phone',
+        'email',
+        'contact_person',
+        'description',
+        'is_active',
+    ];
+
+    /**
+     * Cast attributes
+     */
+    protected $casts = [
+        'is_active'  => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /* =====================================================
+     | RELATIONS
+     ===================================================== */
+
+    /**
+     * Relasi ke SupplierAssessment
+     */
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(SupplierAssessment::class);
+    }
+
+    /**
+     * Relasi ke SupplierTrackRecord
+     */
+    public function trackRecords(): HasMany
+    {
+        return $this->hasMany(SupplierTrackRecord::class);
+    }
+
+    /* =====================================================
+     | ASSESSMENT LOGIC (DARI CODE LAMA)
+     ===================================================== */
+
+    /**
      * Check jika supplier memiliki penilaian
      */
     public function hasAssessments(): bool
     {
-        return $this->assessments()->count() > 0;
+        return $this->assessments()->exists();
     }
 
     /**
@@ -24,40 +71,78 @@ class Supplier extends Model
     }
 
     /**
-     * Scope untuk supplier yang punya penilaian
+     * Scope: supplier yang punya penilaian
      */
     public function scopeWithAssessments($query)
     {
         return $query->whereHas('assessments');
     }
-    // Jika nama tabel 'suppliers', tidak perlu $table
-    // Jika nama tabel 'supplier', tambahkan:
-    // protected $table = 'supplier';
 
-    protected $fillable = [
-        'code',
-        'name',
-        'address',
-        'phone',
-        'email',
-        'contact_person',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    /* =====================================================
+     | TRACK RECORD LOGIC (CODE BARU)
+     ===================================================== */
 
     /**
-     * Relasi ke SupplierAssessment
+     * Track record berdasarkan kriteria
      */
-    public function assessments(): HasMany
+    public function trackRecordsForCriteria($criteriaId)
     {
-        return $this->hasMany(SupplierAssessment::class);
+        return $this->trackRecords()->where('criteria_id', $criteriaId);
     }
 
     /**
-     * Scope untuk supplier yang aktif
+     * Track record berdasarkan tahun
+     */
+    public function trackRecordsForYear($year)
+    {
+        return $this->trackRecords()->where('year', $year);
+    }
+
+    /**
+     * Check jika supplier memiliki track record
+     */
+    public function hasTrackRecords(): bool
+    {
+        return $this->trackRecords()->exists();
+    }
+
+    /**
+     * Persentase kelengkapan track record per tahun
+     */
+    public function getTrackRecordCompletion($year): array
+    {
+        $activeCriteria = Criteria::where('is_active', true)->count();
+        $totalExpected  = $activeCriteria * 12; // 12 bulan
+
+        if ($totalExpected === 0) {
+            return [
+                'total'      => 0,
+                'completed'  => 0,
+                'percentage' => 0,
+            ];
+        }
+
+        $completed = $this->trackRecords()
+            ->where('year', $year)
+            ->where(function ($query) {
+                $query->whereNotNull('description')
+                      ->orWhereNotNull('recommended_score');
+            })
+            ->count();
+
+        return [
+            'total'      => $totalExpected,
+            'completed'  => $completed,
+            'percentage' => round(($completed / $totalExpected) * 100, 2),
+        ];
+    }
+
+    /* =====================================================
+     | SCOPES
+     ===================================================== */
+
+    /**
+     * Scope: supplier aktif
      */
     public function scopeActive($query)
     {

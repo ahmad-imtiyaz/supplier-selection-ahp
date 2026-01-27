@@ -8,10 +8,10 @@
     <title>{{ config('app.name', 'Laravel') }} - @yield('title')</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Alpine.js x-cloak style -->
     <style>
         [x-cloak] { display: none !important; }
@@ -35,9 +35,9 @@
                         <!-- Kanan: Hamburger Menu (mobile only) -->
                         <div class="flex items-center sm:hidden">
                             <button @click="mobileMenu = true" class="text-gray-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" 
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
                                      viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
@@ -61,14 +61,19 @@
                                 Penilaian
                             </a>
 
-                            <a href="{{ route('criteria-comparisons.index') }}" 
+                            <a href="{{ route('track-records.index') }}"
+                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('track-records.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
+                                Track Record
+                            </a>
+
+                            <a href="{{ route('criteria-comparisons.index') }}"
                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('criteria-comparisons.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
                                 Perbandingan AHP
                             </a>
 
                             {{-- 🔥 NEW: Kelola User Menu (Admin Only) --}}
                             @if(Auth::check() && Auth::user()->role === 'admin')
-                            <a href="{{ route('users.index') }}" 
+                            <a href="{{ route('users.index') }}"
                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('users.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
                                 Kelola User
                             </a>
@@ -86,9 +91,9 @@
                                 </svg>
                             </button>
 
-                            <div x-show="open" 
+                            <div x-show="open"
                                  x-cloak
-                                 @click.away="open = false" 
+                                 @click.away="open = false"
                                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
                                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
                                 <form method="POST" action="{{ route('logout') }}">
@@ -105,7 +110,7 @@
         </nav>
 
         <!-- Sidebar Mobile -->
-        <div 
+        <div
             x-show="mobileMenu"
             x-cloak
             class="fixed inset-0 z-40 flex sm:hidden"
@@ -117,7 +122,7 @@
             x-transition:leave-end="opacity-0"
         >
             <!-- Overlay -->
-            <div class="fixed inset-0 bg-black bg-opacity-50" 
+            <div class="fixed inset-0 bg-black bg-opacity-50"
                  @click="mobileMenu = false"></div>
 
             <!-- Sidebar -->
@@ -140,34 +145,39 @@
                 </div>
 
                 <div class="space-y-3">
-                    <a href="{{ route('dashboard') }}" 
+                    <a href="{{ route('dashboard') }}"
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Dashboard
                     </a>
 
-                    <a href="{{ route('criteria.index') }}" 
+                    <a href="{{ route('criteria.index') }}"
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Kriteria
                     </a>
 
-                    <a href="{{ route('suppliers.index') }}" 
+                    <a href="{{ route('suppliers.index') }}"
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Supplier
                     </a>
 
-                    <a href="{{ route('supplier-assessments.index') }}" 
+                    <a href="{{ route('supplier-assessments.index') }}"
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Penilaian
                     </a>
 
-                    <a href="{{ route('criteria-comparisons.index') }}" 
+                    <a href="{{ route('track-records.index') }}"
+                       class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
+                        Track Record
+                    </a>
+
+                    <a href="{{ route('criteria-comparisons.index') }}"
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Perbandingan AHP
                     </a>
 
                     {{-- 🔥 NEW: Kelola User Menu Mobile (Admin Only) --}}
                     @if(Auth::check() && Auth::user()->role === 'admin')
-                    <a href="{{ route('users.index') }}" 
+                    <a href="{{ route('users.index') }}"
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Kelola User
                     </a>
@@ -176,7 +186,7 @@
                     <hr class="my-3">
 
                     <!-- User Menu di Mobile -->
-                    <a href="{{ route('profile.edit') }}" 
+                    <a href="{{ route('profile.edit') }}"
                        class="block text-gray-700 hover:bg-gray-100 px-3 py-2 rounded">
                         Profile
                     </a>
@@ -202,7 +212,7 @@
     <!-- 🔥 TOAST NOTIFICATION COMPONENT -->
     <div x-data="toastManager()" @toast.window="show($event.detail)" class="fixed top-4 right-4 z-50 space-y-3">
         <template x-for="toast in toasts" :key="toast.id">
-            <div 
+            <div
                 x-show="toast.visible"
                 x-transition:enter="transform transition ease-out duration-300"
                 x-transition:enter-start="translate-x-full opacity-0"
@@ -244,7 +254,7 @@
 
                 <!-- Message -->
                 <div class="ml-3 flex-1">
-                    <p x-text="toast.message" 
+                    <p x-text="toast.message"
                        :class="{
                            'text-green-800': toast.type === 'success',
                            'text-red-800': toast.type === 'error',
@@ -266,7 +276,7 @@
     </div>
 
     <!-- 🔥 LOADING OVERLAY COMPONENT -->
-    <div x-data="{ loading: false }" 
+    <div x-data="{ loading: false }"
          @loading.window="loading = $event.detail"
          x-show="loading"
          x-cloak
@@ -288,15 +298,15 @@
     </div>
 
     <!-- 🔥 CONFIRM DIALOG COMPONENT -->
-    <div x-data="{ 
-            show: false, 
-            title: '', 
-            message: '', 
+    <div x-data="{
+            show: false,
+            title: '',
+            message: '',
             confirmText: 'Hapus',
             cancelText: 'Batal',
             confirmClass: 'bg-red-600 hover:bg-red-700',
             onConfirm: null,
-            
+
             open(options) {
                 this.title = options.title || 'Konfirmasi';
                 this.message = options.message || 'Apakah Anda yakin?';
@@ -306,14 +316,14 @@
                 this.onConfirm = options.onConfirm || null;
                 this.show = true;
             },
-            
+
             confirm() {
                 if (this.onConfirm && typeof this.onConfirm === 'function') {
                     this.onConfirm();
                 }
                 this.show = false;
             },
-            
+
             cancel() {
                 this.show = false;
             }
@@ -322,7 +332,7 @@
         x-show="show"
         x-cloak
         class="fixed inset-0 z-50 overflow-y-auto">
-        
+
         <!-- Backdrop -->
         <div x-show="show"
              x-transition:enter="ease-out duration-300"
@@ -345,10 +355,10 @@
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  class="relative transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
                  @click.away="cancel()">
-                
+
                 <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
-                        
+
                         <!-- Icon -->
                         <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
                             <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

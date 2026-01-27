@@ -6,7 +6,7 @@
 <div class="space-y-6">
     <!-- Back Button -->
     <div>
-        <a href="{{ route('users.index') }}" 
+        <a href="{{ route('users.index') }}"
            class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -26,7 +26,7 @@
                         {{ strtoupper(substr($user->name, 0, 1)) }}
                     </div>
                 </div>
-                
+
                 <!-- User Info -->
                 <div class="flex-1 text-center sm:text-left">
                     <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">{{ $user->name }}</h1>
@@ -43,7 +43,7 @@
 
                 <!-- Actions -->
                 <div class="flex-shrink-0 w-full sm:w-auto">
-                    <a href="{{ route('users.edit', $user) }}" 
+                    <a href="{{ route('users.edit', $user) }}"
                        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -97,7 +97,7 @@
                         <p class="text-xs sm:text-sm text-gray-500">Track semua aktivitas user di sistem</p>
                     </div>
                 </div>
-                
+
                 <!-- Statistics -->
                 <div class="grid grid-cols-4 gap-3 sm:gap-4 lg:flex lg:items-center lg:space-x-6 text-sm">
                     <div class="text-center">
@@ -123,32 +123,32 @@
         <!-- Filter Tabs -->
         <div class="px-4 sm:px-6 py-4 bg-white border-b border-gray-200">
             <div class="flex items-center space-x-2 overflow-x-auto pb-2 sm:pb-0">
-                <button onclick="filterActivities('all')" 
+                <button onclick="filterActivities('all')"
                         class="filter-tab active px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
                     Semua
                 </button>
-                <button onclick="filterActivities('Supplier')" 
+                <button onclick="filterActivities('Supplier')"
                         class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
                     </svg>
                     Supplier
                 </button>
-                <button onclick="filterActivities('Criteria')" 
+                <button onclick="filterActivities('Criteria')"
                         class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                     </svg>
                     Kriteria
                 </button>
-                <button onclick="filterActivities('CriteriaComparison')" 
+                <button onclick="filterActivities('CriteriaComparison')"
                         class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                     </svg>
                     AHP
                 </button>
-                <button onclick="filterActivities('SupplierAssessment')" 
+                <button onclick="filterActivities('SupplierAssessment')"
                         class="filter-tab px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
@@ -171,7 +171,7 @@
             @else
                 <div class="space-y-3 sm:space-y-4" id="activity-list">
                     @foreach($activities as $log)
-                        <div class="activity-item border-l-4 {{ $log->action_badge_color }} bg-gray-50 rounded-r-lg p-3 sm:p-4 hover:shadow-md transition-all duration-200" 
+                        <div class="activity-item border-l-4 {{ $log->action_badge_color }} bg-gray-50 rounded-r-lg p-3 sm:p-4 hover:shadow-md transition-all duration-200"
                              data-model="{{ $log->model }}">
                             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
                                 <div class="flex items-start space-x-3 flex-1 min-w-0">
@@ -179,7 +179,7 @@
                                     <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg {{ $log->action_badge_color }} bg-opacity-10 flex items-center justify-center">
                                         {!! $log->action_icon !!}
                                     </div>
-                                    
+
                                     <!-- Content -->
                                     <div class="flex-1 min-w-0">
                                         <!-- Action & Model -->
@@ -190,10 +190,10 @@
                                             <span class="text-xs text-gray-500">•</span>
                                             <span class="text-xs font-medium text-gray-700">{{ $log->model_name }}</span>
                                         </div>
-                                        
+
                                         <!-- Description -->
                                         <p class="text-sm text-gray-900 mb-2 break-words">{{ $log->description }}</p>
-                                        
+
                                       <!-- Changes (if any) -->
 @if($log->hasValueChanges())
     <div class="mt-3 space-y-2">
@@ -214,7 +214,7 @@
         @endforeach
     </div>
 @endif
-                                        
+
                                         <!-- IP & Browser Info (Hidden on mobile) -->
                                         @if($log->ip_address || $log->user_agent)
                                             <div class="mt-2 hidden sm:flex items-center space-x-4 text-xs text-gray-500">
@@ -238,7 +238,7 @@
                                         @endif
                                     </div>
                                 </div>
-                                
+
                                 <!-- Timestamp -->
                                 <div class="flex-shrink-0 text-left sm:text-right sm:ml-4">
                                     <div class="text-xs font-medium text-gray-900">{{ $log->time_ago }}</div>
@@ -267,10 +267,10 @@ function filterActivities(model) {
         tab.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-md');
         tab.classList.add('text-gray-600', 'hover:bg-gray-100');
     });
-    
+
     event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
     event.target.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-md');
-    
+
     // Filter activities
     const items = document.querySelectorAll('.activity-item');
     items.forEach(item => {
@@ -296,14 +296,14 @@ document.addEventListener('DOMContentLoaded', function() {
     items.forEach(item => {
         item.style.transition = 'all 0.2s ease-in-out';
     });
-    
+
     // Active tab styling
     const activeTabs = document.querySelectorAll('.filter-tab.active');
     activeTabs.forEach(tab => {
         tab.classList.add('bg-blue-600', 'text-white', 'shadow-md');
         tab.classList.remove('text-gray-600', 'hover:bg-gray-100');
     });
-    
+
     const inactiveTabs = document.querySelectorAll('.filter-tab:not(.active)');
     inactiveTabs.forEach(tab => {
         tab.classList.add('text-gray-600', 'hover:bg-gray-100');
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
         -webkit-overflow-scrolling: touch; /* Smooth scrolling di iOS */
         scrollbar-width: thin; /* Firefox */
     }
-    
+
     /* Pastikan container bisa di-scroll */
     .flex.overflow-x-auto {
         display: flex;
@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
-    
+
     /* Hapus padding bottom di mobile agar tidak ada space */
     .overflow-x-auto.pb-2 {
         padding-bottom: 0.5rem !important;

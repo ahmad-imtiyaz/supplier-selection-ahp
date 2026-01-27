@@ -6,6 +6,7 @@ use App\Http\Controllers\CriteriaController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CriteriaComparisonController;
 use App\Http\Controllers\SupplierAssessmentController;
+use App\Http\Controllers\SupplierTrackRecordController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{criteriaComparison}', [CriteriaComparisonController::class, 'destroy'])->name('destroy');
     });
 
+    // Supplier Track Records
+    // 🔥 FIXED: Use explicit URL segments to avoid route conflicts
+    Route::prefix('track-records')->name('track-records.')->group(function () {
+        Route::get('/', [SupplierTrackRecordController::class, 'index'])->name('index');
+
+        // Supplier-specific routes (use 'supplier' prefix for clarity)
+        Route::get('/supplier/{supplier}', [SupplierTrackRecordController::class, 'show'])->name('show');
+        Route::get('/supplier/{supplier}/edit', [SupplierTrackRecordController::class, 'edit'])->name('edit');
+        Route::put('/supplier/{supplier}/update', [SupplierTrackRecordController::class, 'update'])->name('update');
+        Route::post('/supplier/{supplier}/reset', [SupplierTrackRecordController::class, 'reset'])->name('reset');
+        Route::post('/supplier/{supplier}/initialize', [SupplierTrackRecordController::class, 'initialize'])->name('initialize');
+        Route::delete('/supplier/{supplier}/clear-activities', [SupplierTrackRecordController::class, 'clearActivities'])->name('clear-activities');
+
+        // Track record specific routes
+        Route::delete('/record/{trackRecord}', [SupplierTrackRecordController::class, 'destroy'])->name('destroy');
+    });
+
     // Supplier Assessment
     Route::prefix('supplier-assessments')->name('supplier-assessments.')->group(function () {
         Route::get('/', [SupplierAssessmentController::class, 'index'])->name('index');
@@ -52,10 +70,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/reset', [SupplierAssessmentController::class, 'reset'])->name('reset');
     });
 
-    // 🔥 USER MANAGEMENT - ADMIN ONLY (FIXED ORDER!)
+    // USER MANAGEMENT - ADMIN ONLY (FIXED ORDER!)
     Route::middleware('admin')->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('index');
-        Route::get('/{user}/edit', [UserManagementController::class, 'edit'])->name('edit'); // ← MUST BE BEFORE show!
+        Route::get('/{user}/edit', [UserManagementController::class, 'edit'])->name('edit');
         Route::get('/{user}', [UserManagementController::class, 'show'])->name('show');
         Route::patch('/{user}', [UserManagementController::class, 'update'])->name('update');
         Route::patch('/{user}/promote', [UserManagementController::class, 'promoteToAdmin'])->name('promote');
@@ -64,7 +82,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware(['auth'])->group(function () {
-        // Toggle active status (OPTIONAL)
         Route::patch('suppliers/{supplier}/toggle-active', [SupplierController::class, 'toggleActive'])
             ->name('suppliers.toggle-active');
 

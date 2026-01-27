@@ -82,9 +82,6 @@ class ActivityLog extends Model
     }
 
     /**
-     * Get action icon
-     */
-    /**
      * Get action icon as SVG
      */
     public function getActionIconAttribute(): string
@@ -115,6 +112,7 @@ class ActivityLog extends Model
                     </svg>',
         };
     }
+
     /**
      * Get action text in Indonesian
      */
@@ -140,6 +138,7 @@ class ActivityLog extends Model
             'Criteria' => 'Kriteria',
             'CriteriaComparison' => 'Perbandingan AHP',
             'SupplierAssessment' => 'Penilaian Supplier',
+            'SupplierTrackRecord' => 'Track Record Supplier',
             default => $this->model,
         };
     }
@@ -191,6 +190,12 @@ class ActivityLog extends Model
             'criteria_1' => 'Kriteria 1',
             'criteria_2' => 'Kriteria 2',
             'weight' => 'Bobot',
+            'period' => 'Periode',
+            'recommended_score' => 'Skor Rekomendasi',
+            'supplier' => 'Supplier',
+            'criteria' => 'Kriteria',
+            'year' => 'Tahun',
+            'month' => 'Bulan',
             default => ucfirst(str_replace('_', ' ', $field)),
         };
     }
@@ -202,8 +207,9 @@ class ActivityLog extends Model
     {
         return !empty($this->changes_summary);
     }
+
     /**
-     * Get time ago in Indonesian (rounded)
+     * Get time ago in Indonesian (FIXED - properly rounded)
      */
     public function getTimeAgoAttribute(): string
     {
@@ -214,13 +220,9 @@ class ActivityLog extends Model
         if ($diffInMinutes < 1) {
             return 'Baru saja';
         } elseif ($diffInMinutes < 60) {
-            // Round ke angka bulat terdekat
-            $minutes = round($diffInMinutes);
-            return $minutes . ' menit yang lalu';
+            return $diffInMinutes . ' menit yang lalu';
         } elseif ($diffInHours < 24) {
-            // Round ke angka bulat terdekat
-            $hours = round($diffInHours);
-            return $hours . ' jam yang lalu';
+            return $diffInHours . ' jam yang lalu';
         } elseif ($diffInDays < 7) {
             return $diffInDays . ' hari yang lalu';
         } elseif ($diffInDays < 30) {

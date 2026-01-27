@@ -9,6 +9,9 @@ class Criteria extends Model
 {
     protected $table = 'criteria';
 
+    /**
+     * Mass assignment
+     */
     protected $fillable = [
         'code',
         'name',
@@ -17,10 +20,19 @@ class Criteria extends Model
         'is_active',
     ];
 
+    /**
+     * Cast attributes
+     */
     protected $casts = [
-        'weight' => 'decimal:4',
-        'is_active' => 'boolean',
+        'weight'     => 'decimal:4',
+        'is_active'  => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
+
+    /* =====================================================
+     | RELATIONS – AHP COMPARISON
+     ===================================================== */
 
     /**
      * Relasi ke CriteriaComparison sebagai criteria_1
@@ -39,7 +51,7 @@ class Criteria extends Model
     }
 
     /**
-     * Alias untuk comparisonsAsCriteria1 (untuk backward compatibility)
+     * Alias (BACKWARD COMPATIBILITY)
      */
     public function comparisons1(): HasMany
     {
@@ -47,7 +59,7 @@ class Criteria extends Model
     }
 
     /**
-     * Alias untuk comparisonsAsCriteria2 (untuk backward compatibility)
+     * Alias (BACKWARD COMPATIBILITY)
      */
     public function comparisons2(): HasMany
     {
@@ -55,7 +67,7 @@ class Criteria extends Model
     }
 
     /**
-     * Get all comparisons yang melibatkan kriteria ini
+     * Semua comparison yang melibatkan kriteria ini
      */
     public function allComparisons()
     {
@@ -64,12 +76,16 @@ class Criteria extends Model
     }
 
     /**
-     * Check jika kriteria memiliki perbandingan
+     * Check jika kriteria memiliki perbandingan AHP
      */
     public function hasComparisons(): bool
     {
         return $this->comparisons1()->exists() || $this->comparisons2()->exists();
     }
+
+    /* =====================================================
+     | RELATIONS – ASSESSMENT & TRACK RECORD
+     ===================================================== */
 
     /**
      * Relasi ke SupplierAssessment
@@ -77,6 +93,22 @@ class Criteria extends Model
     public function assessments(): HasMany
     {
         return $this->hasMany(SupplierAssessment::class, 'criteria_id');
+    }
+
+    /**
+     * Relasi ke SupplierTrackRecord
+     */
+    public function trackRecords(): HasMany
+    {
+        return $this->hasMany(SupplierTrackRecord::class, 'criteria_id');
+    }
+
+    /**
+     * Track record berdasarkan supplier
+     */
+    public function trackRecordsForSupplier($supplierId)
+    {
+        return $this->trackRecords()->where('supplier_id', $supplierId);
     }
 
     /**
@@ -88,40 +120,52 @@ class Criteria extends Model
     }
 
     /**
-     * Get total impact count
+     * Check jika kriteria memiliki track record
+     */
+    public function hasTrackRecords(): bool
+    {
+        return $this->trackRecords()->exists();
+    }
+
+    /* =====================================================
+     | BUSINESS LOGIC
+     ===================================================== */
+
+    /**
+     * Total dampak penggunaan kriteria
      */
     public function impactCount(): array
     {
         return [
             'assessments' => $this->assessments()->count(),
             'comparisons' => $this->comparisons1()->count() + $this->comparisons2()->count(),
+            'track_records' => $this->trackRecords()->count(),
         ];
     }
 
     /**
-     * Scope untuk criteria yang aktif
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    /**
-     * Check if criteria can be deleted
+     * Validasi apakah kriteria boleh dihapus
      */
     public function canBeDeleted(): array
     {
         if ($this->hasComparisons()) {
             return [
                 'can_delete' => false,
-                'reason' => 'Kriteria tidak dapat dihapus karena sudah digunakan dalam perbandingan AHP. Hapus perbandingan terlebih dahulu.'
+                'reason' => 'Kriteria tidak dapat dihapus karena sudah digunakan dalam perbandingan AHP.'
             ];
         }
 
         if ($this->hasAssessments()) {
             return [
                 'can_delete' => false,
-                'reason' => 'Kriteria tidak dapat dihapus karena sudah digunakan dalam penilaian supplier. Hapus penilaian terlebih dahulu.'
+                'reason' => 'Kriteria tidak dapat dihapus karena sudah digunakan dalam penilaian supplier.'
+            ];
+        }
+
+        if ($this->hasTrackRecords()) {
+            return [
+                'can_delete' => false,
+                'reason' => 'Kriteria tidak dapat dihapus karena sudah digunakan dalam track record supplier.'
             ];
         }
 
@@ -129,5 +173,17 @@ class Criteria extends Model
             'can_delete' => true,
             'reason' => null
         ];
+    }
+
+    /* =====================================================
+     | SCOPES
+     ===================================================== */
+
+    /**
+     * Scope: kriteria aktif
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }
