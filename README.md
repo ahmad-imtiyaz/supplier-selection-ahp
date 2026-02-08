@@ -1,131 +1,112 @@
-# **Supplier Selection Using AHP**
+Installation & Setup
 
-## **Project Overview**
+Ikuti langkah-langkah berikut secara berurutan agar aplikasi dapat dijalankan dengan benar.
 
-Repository ini berisi implementasi sistem pendukung keputusan (SPK) untuk **pemilihan supplier** berbasis **Analytic Hierarchy Process (AHP)**. AHP adalah metode *Multi-Criteria Decision Making* (MCDM) yang umum digunakan untuk mengevaluasi dan membandingkan alternatif berdasarkan beberapa kriteria yang saling bertentangan. Metode ini memungkinkan pengguna untuk memberikan bobot prioritas pada tiap kriteria, menggabungkan penilaian subjektif dan objektif, lalu menghitung peringkat akhir supplier terbaik berdasarkan bobot tersebut. ([VGTU Journals][1])
+1. Clone repository
+git clone https://github.com/ahmad-imtiyaz/supplier-selection-ahp.git
 
-Project ini dibuat sebagai tugas akhir mata kuliah **Sistem Pendukung Keputusan (SPK) & Sistem Enterprise (SE)** dan bertujuan memberikan solusi terstruktur dalam proses evaluasi supplier dengan pendekatan AHP.
+2. Masuk ke direktori project
+cd supplier-selection-ahp
 
-## **Features**
+3. Install dependency PHP (Laravel)
+composer install
 
-Fitur utama yang tersedia:
+4. Install dependency Node.js
 
-* Form input data supplier dan kriteria evaluasi
-* Perhitungan AHP untuk menentukan bobot kriteria
-* Perbandingan berpasangan (pairwise comparison)
-* Normalisasi dan perankingan supplier
-* Tampilan hasil perhitungan dan hasil rekomendasi supplier
+Project ini menggunakan Node.js untuk kebutuhan frontend build (Vite / asset bundling), sehingga wajib menjalankan perintah berikut:
 
-## **Tech Stack**
+npm install
 
-Project ini dibangun menggunakan komponen teknologi berikut:
 
-* **PHP** — Bahasa utama aplikasi backend
-* **Laravel Framework** — Struktur aplikasi dan routing
-* **Blade Templating Engine** — Untuk rendering antarmuka
-* **Bootstrap** — UI framework responsif
-* **MySQL** — Database untuk penyimpanan data supplier dan kriteria
-* **JavaScript** — Interaktivitas frontend
+Pastikan Node.js dan NPM sudah terinstal di komputer Anda.
 
-## **Installation & Setup**
+5. Salin file environment
+cp .env.example .env
 
-1. **Clone repository:**
 
-   ```bash
-   git clone https://github.com/ahmad-imtiyaz/supplier-selection-ahp.git
-   ```
+Lalu sesuaikan konfigurasi database pada file .env:
 
-2. **Masuk ke direktori project:**
+DB_DATABASE=nama_database
+DB_USERNAME=root
+DB_PASSWORD=
 
-   ```bash
-   cd supplier-selection-ahp
-   ```
+6. Generate application key
+php artisan key:generate
 
-3. **Install dependensi PHP:**
+7. Migrasi database
+php artisan migrate
 
-   ```bash
-   composer install
-   ```
+8. ⚠️ WAJIB: Jalankan Database Seeder
+php artisan db:seed
 
-4. **Salin file environment dan konfigurasi:**
 
-   ```bash
-   cp .env.example .env
-   ```
+Seeder digunakan untuk mengisi data awal sistem, meliputi:
 
-   Sesuaikan konfigurasi database pada `.env`.
+Akun administrator
 
-5. **Generate application key:**
+Data kriteria evaluasi
 
-   ```bash
-   php artisan key:generate
-   ```
+Data supplier
 
-6. **Migrasi database:**
+Tanpa menjalankan seeder, aplikasi tidak dapat digunakan dengan benar karena data awal belum tersedia.
 
-   ```bash
-   php artisan migrate
-   ```
+9. Jalankan aplikasi
 
-7. **Jalankan server development:**
+Untuk menjalankan aplikasi, tidak menggunakan php artisan serve, melainkan:
 
-   ```bash
-   php artisan serve
-   ```
+npm run start
 
-   Akses aplikasi di `http://localhost:8000`.
 
-> Pastikan anda sudah menginstal **PHP**, **Composer**, dan **MySQL** dengan versi sesuai kebutuhan Laravel.
+Aplikasi dapat diakses melalui browser pada alamat:
 
-## **Usage**
+http://localhost:8000
 
-Setelah server berjalan, Anda dapat:
+🔐 Default Admin Account
 
-* Menambahkan data *criteria* dan *supplier* ke dalam sistem.
-* Menginput penilaian untuk setiap supplier berdasarkan kriteria.
-* Melakukan perbandingan berpasangan antar kriteria.
-* Melihat hasil perhitungan AHP dan rekomendasi supplier terbaik.
+Setelah menjalankan perintah php artisan db:seed, sistem akan otomatis membuat akun administrator dengan kredensial berikut:
 
-*Contoh alur penggunaan:*
+Email    : admin@gmail.com
+Password : password
+Role     : Admin
+Status   : Active
 
-1. Buka menu kriteria → tambah kriteria evaluasi (misalnya: harga, kualitas, pengiriman).
-2. Buka halaman supplier → tambah daftar supplier.
-3. Lakukan *pairwise comparison* untuk menentukan bobot prioritas.
-4. Sistem secara otomatis menghitung dan menampilkan pilihan supplier terbaik.
 
-## **Folder Structure**
+Akun ini digunakan untuk:
 
-Struktur direktori utama project:
+Login ke sistem
 
-```
-app/                  # Logika backend utama (Controllers, Models)
-bootstrap/            # Bootstrap framework untuk Laravel
-config/               # Konfigurasi aplikasi
-database/             # Migrations dan seeders
-public/               # Aset publik (CSS/JS), entry point web
-resources/            # Views, Blade templates, assets
-routes/               # Definisi semua route aplikasi
-tests/                # Unit / Feature tests
-.env.example          # Template file environment
-composer.json         # Daftar dependensi PHP
-```
+Mengelola data kriteria
 
-## **Contributing**
+Mengelola data supplier
 
-Kontribusi diperbolehkan melalui mekanisme GitHub:
+Melakukan proses perhitungan dan analisis AHP
 
-1. Fork repository ini.
-2. Buat branch baru sesuai fitur/perbaikan.
-3. Buat commit dengan pesan yang jelas.
-4. Ajukan pull request untuk direview.
+⚠️ Catatan:
+Akun dan password ini disediakan untuk keperluan demo dan pengujian.
+Disarankan untuk mengganti password setelah login pertama kali.
 
-## **Author**
+🧪 Seeder Information
 
-**Ahmad Imtiyaz Najih**
-Web Developer & SPK Enthusiast
-GitHub: [https://github.com/ahmad-imtiyaz](https://github.com/ahmad-imtiyaz)
-Email: **imtiyaznajih8@gmail.com**
+Seeder yang dijalankan dalam project ini:
 
----
+AdminUserSeeder → Membuat akun admin default
 
-[1]: https://journals.vilniustech.lt/index.php/Transport/article/view/1897?utm_source=chatgpt.com "The use of AHP method for selection of supplier | Transport"
+CriteriaSeeder → Mengisi data kriteria evaluasi
+
+SupplierSeeder → Mengisi data supplier
+
+Semua seeder menggunakan metode updateOrCreate, sehingga aman dijalankan berulang kali tanpa menyebabkan duplikasi data.
+
+🎓 Catatan untuk Dosen / Penguji
+
+Project ini dibuat sebagai tugas mata kuliah Sistem Pendukung Keputusan (SPK) & Sistem Enterprise (SE) dengan studi kasus pemilihan supplier menggunakan metode Analytic Hierarchy Process (AHP).
+
+Untuk keperluan pengujian dan penilaian:
+
+Jalankan migration
+
+Jalankan database seeder
+
+Login menggunakan akun admin default
+
+Sistem siap digunakan tanpa konfigurasi tambahan
